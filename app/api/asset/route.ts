@@ -12,6 +12,20 @@ export async function GET() {
     return NextResponse.json({ assets });
   } catch (error) {
     console.error('Error in GET /api/asset:', error);
+    
+    // Check if it's a MongoDB connection issue
+    if (error instanceof Error && (
+      error.message.includes('MongoServerSelectionError') ||
+      error.message.includes('ENOTFOUND') ||
+      error.message.includes('ssl3_read_bytes') ||
+      error.message.includes('tlsv1 alert')
+    )) {
+      return NextResponse.json({ 
+        error: 'Database is currently unavailable. Please try again later.',
+        type: 'database_unavailable'
+      }, { status: 503 });
+    }
+    
     return NextResponse.json({ error: 'Failed to fetch assets' }, { status: 500 });
   }
 }
