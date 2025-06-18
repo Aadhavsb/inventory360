@@ -9,20 +9,20 @@ interface AssetFormProps {
   onSuccess?: () => void;
 }
 
-// Wildlife conservation sites in India
+// Wildlife SOS conservation sites in India
 const wildlifeSites = [
+  'Elephant Conservation and Care Centre',
   'Agra Bear Rescue Facility',
-  'Bannerghatta Bear Rescue Center',
-  'Van Vihar Rescue Center',
-  'Pune Leopard Rescue Center',
-  'Delhi Wildlife Rescue',
-  'Mumbai Elephant Rescue',
-  'Goa Wildlife Sanctuary',
-  'Kerala Elephant Care Center',
-  'Tamil Nadu Bear Sanctuary',
-  'Rajasthan Wildlife Hospital',
-  'Gujarat Lion Rescue',
-  'West Bengal Tiger Care Unit'
+  'Bannerghatta Bear Rescue Centre',
+  'Manikdoh Leopard Rescue Centre',
+  'Elephant Hospital',
+  'Dachigam Rescue Centre',
+  'Pahalgam Rescue Centre',
+  'Elephant Rehabilitation Centre',
+  'Wildlife SOS Transit Facility',
+  'Human Primate Conflict Mitigation Centre',
+  'Van Vihar Bear Rescue Facility',
+  'West Bengal Bear Rescue Centre'
 ];
 
 export default function AssetForm({ onSuccess }: AssetFormProps) {
