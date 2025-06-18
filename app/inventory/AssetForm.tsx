@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { useState } from 'react';
 
 interface AssetFormProps {
-  onSuccess?: () => void;
+  onSuccess?: (newAsset?: { success: boolean; insertedId?: string }) => void;
 }
 
 // Wildlife SOS conservation sites in India
@@ -44,15 +44,15 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
       });
       
       const responseData = await res.json();
-      console.log('API response:', responseData);
-      
-      if (res.ok) {
+      console.log('API response:', responseData);      if (res.ok) {
         setSuccess('🎉 Asset added successfully to conservation inventory!');
         reset();
         setTimeout(() => {
-          onSuccess?.();
+          onSuccess?.(responseData); // Pass the response data but don't close the form
+        }, 500); // Shorter timeout since we're not clearing the success message
+        setTimeout(() => {
           setSuccess('');
-        }, 2000);      } else {
+        }, 4000); // Clear success message after 4 seconds} else {
         console.error('API error:', responseData);
         let errorMessage = 'Failed to add conservation asset';
         
@@ -89,8 +89,20 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
   return (
     <div className="font-wildlife">
       {/* Success/Error Messages */}      {success && (
-        <div className="mb-4 p-3 bg-wildlife-green/10 border border-wildlife-green/30 rounded-xl text-wildlife-green text-sm font-medium">
-          {success}
+        <div className="mb-4 p-4 bg-wildlife-green/15 border-2 border-wildlife-green/40 rounded-xl text-wildlife-green text-sm font-medium flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <span className="text-lg">🎉</span>
+            <div>
+              <div>{success}</div>
+              <div className="text-xs text-wildlife-green/70 mt-1">Form cleared and ready for next entry</div>
+            </div>
+          </div>
+          <button 
+            onClick={() => setSuccess('')}
+            className="text-wildlife-green/60 hover:text-wildlife-green text-xs"
+          >
+            ✕
+          </button>
         </div>
       )}
       {error && (

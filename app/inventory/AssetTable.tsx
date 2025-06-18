@@ -11,7 +11,11 @@ interface Asset {
   site: string;
 }
 
-const AssetTable: FC = () => {  const [assets, setAssets] = useState<Asset[]>([]);
+interface AssetTableProps {
+  refreshTrigger?: number;
+}
+
+const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets, setAssets] = useState<Asset[]>([]);
   const [search, setSearch] = useState('');
   const [filtered, setFiltered] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,10 +32,9 @@ const AssetTable: FC = () => {  const [assets, setAssets] = useState<Asset[]>([]
       } catch (error) {
         console.error('Failed to fetch assets:', error);
       }
-      setLoading(false);
-    }
+      setLoading(false);    }
     fetchAssets();
-  }, []);
+  }, [refreshTrigger]); // Add refreshTrigger as dependency
   useEffect(() => {
     let result = assets.filter(a =>
       a.name.toLowerCase().includes(search.toLowerCase()) ||

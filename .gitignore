@@ -33,6 +33,15 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Security - Never commit test files with credentials
+test-mongo.js
+test-db.js
+*-test.js
+*.test.js
+test-connection.*
+mongo-test.*
+db-test.*
+
 # vercel
 .vercel
 

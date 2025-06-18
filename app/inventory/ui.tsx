@@ -13,11 +13,16 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
   const { data: session } = useSession();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   if (!session) {
     router.push('/login');
     return null;
   }
+  const handleAssetAdded = () => {
+    // Trigger a refresh of the asset table
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   return (
     <div className="min-h-screen bg-wildlife-ivory font-wildlife">
@@ -110,14 +115,12 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
                   <span className="text-2xl">🛠️</span>
                   <h4 className="text-xl font-semibold text-wildlife-black">Add Conservation Asset</h4>
                 </div>
-                <AssetForm onSuccess={() => setShowForm(false)} />
+                <AssetForm onSuccess={handleAssetAdded} />
               </div>
             </div>
-          )}
-
-          {/* Asset table */}
+          )}          {/* Asset table */}
           <div className="p-6">
-            <AssetTable />
+            <AssetTable refreshTrigger={refreshTrigger} />
           </div>
         </div>
 
