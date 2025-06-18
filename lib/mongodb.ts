@@ -11,7 +11,10 @@ console.log('Mongoose setup - URI exists:', !!uri);
 console.log('Mongoose setup - NODE_ENV:', process.env.NODE_ENV);
 
 declare global {
-  var mongoose: any; // This must be a `var` and not a `let / const`
+  var mongoose: {
+    conn: typeof import('mongoose') | null;
+    promise: Promise<typeof import('mongoose')> | null;
+  }; // This must be a `var` and not a `let / const`
 }
 
 let cached = global.mongoose;
