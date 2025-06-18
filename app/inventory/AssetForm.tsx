@@ -47,8 +47,8 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
       console.log('API response data:', JSON.stringify(responseData, null, 2));
       console.log('Response has success property:', 'success' in responseData);
       console.log('Response.success value:', responseData.success);
-      
-      if (res.ok && responseData.success) {
+        if (res.ok && responseData.success) {
+        console.log('✅ Success path taken');
         setSuccess('🎉 Asset added successfully to conservation inventory!');
         reset();
         setTimeout(() => {
@@ -56,7 +56,9 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
         }, 500); // Shorter timeout since we're not clearing the success message
         setTimeout(() => {
           setSuccess('');
-        }, 4000); // Clear success message after 4 seconds} else {
+        }, 4000); // Clear success message after 4 seconds
+      } else {
+        console.log('❌ Error path taken');
         console.error('API error:', responseData);
         let errorMessage = 'Failed to add conservation asset';
         
