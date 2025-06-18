@@ -17,4 +17,8 @@ export const assetSchema = z.object({
     return !isNaN(parsedDate.getTime());
   }, 'Please enter a valid date'),
   site: z.string().min(1, 'Please select a wildlife site'),
+  loggedBy: z.object({
+    name: z.string().min(1, 'User name is required'),
+    email: z.string().email('Valid email is required')
+  })
 });

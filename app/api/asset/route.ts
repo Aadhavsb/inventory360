@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import connectToDatabase from '@/lib/mongodb';
 import Asset from '@/lib/models/Asset';
 import { assetSchema } from '@/lib/validation';
@@ -31,16 +33,36 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   console.log('POST /api/asset - Starting request processing');
-  console.log('Environment check - MONGODB_URI exists:', !!process.env.MONGODB_URI);
-  console.log('Environment check - NODE_ENV:', process.env.NODE_ENV);
   
   try {
-    console.log('Step 1: Parsing request body...');
+    // Get the user session
+    console.log('Step 1: Getting user session...');
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ 
+        error: 'Unauthorized - Please log in to add assets',
+        type: 'unauthorized'
+      }, { status: 401 });
+    }
+    
+    console.log('User session found:', session.user.email);
+    
+    console.log('Step 2: Parsing request body...');
     const data = await req.json();
     console.log('Received data:', JSON.stringify(data, null, 2));
     
-    console.log('Step 2: Validating data with schema...');
-    const parse = assetSchema.safeParse(data);
+    // Add the logged by information to the data
+    const assetDataWithUser = {
+      ...data,
+      loggedBy: {
+        name: session.user.name || session.user.email?.split('@')[0] || 'Unknown User',
+        email: session.user.email || 'unknown@email.com'
+      }
+    };
+    
+    console.log('Step 3: Validating data with schema...');
+    const parse = assetSchema.safeParse(assetDataWithUser);
     if (!parse.success) {
       console.log('Validation failed:', JSON.stringify(parse.error.errors, null, 2));
       return NextResponse.json({ 
@@ -50,14 +72,14 @@ export async function POST(req: NextRequest) {
     }
     console.log('Validation passed, validated data:', JSON.stringify(parse.data, null, 2));
     
-    console.log('Step 3: Connecting to database...');
+    console.log('Step 4: Connecting to database...');
     await connectToDatabase();
     console.log('Database connected successfully');
     
-    console.log('Step 4: Creating asset document...');
+    console.log('Step 5: Creating asset document...');
     const asset = new Asset(parse.data);
     
-    console.log('Step 5: Saving to database...');
+    console.log('Step 6: Saving to database...');
     const savedAsset = await asset.save();
     console.log('Asset saved successfully with ID:', savedAsset._id);
     

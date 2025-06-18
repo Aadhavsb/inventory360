@@ -12,6 +12,10 @@ interface Asset {
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
+  loggedBy?: {
+    name: string;
+    email: string;
+  };
 }
 
 interface AssetTableProps {
@@ -29,9 +33,7 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
     if (filtered.length === 0) {
       alert('📊 No assets to export. Please adjust your filters to see data.');
       return;
-    }
-
-    // CSV Headers - including additional metadata
+    }    // CSV Headers - including additional metadata
     const headers = [
       'Asset Name', 
       'Type', 
@@ -39,11 +41,11 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
       'Acquired', 
       'Date Acquired', 
       'Wildlife Center',
+      'Logged By',
       'Asset ID',
       'Created Date',
       'Last Updated'
-    ];
-      // Convert filtered data to CSV format with enhanced data
+    ];      // Convert filtered data to CSV format with enhanced data
     const csvData = filtered.map(asset => [
       `"${asset.name}"`,
       `"${asset.type}"`,
@@ -51,6 +53,7 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
       `"${asset.acquired}"`,
       `"${new Date(asset.date).toLocaleDateString('en-IN')}"`,
       `"${asset.site}"`,
+      `"${asset.loggedBy?.name || 'Unknown'}"`,
       `"${asset._id || 'N/A'}"`,
       `"${asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('en-IN') : 'N/A'}"`,
       `"${asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString('en-IN') : 'N/A'}"`
@@ -298,8 +301,7 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
 
       {/* Assets Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white rounded-2xl shadow-wildlife overflow-hidden border border-wildlife-green/20">
-          <thead className="bg-wildlife-green text-white">
+        <table className="min-w-full bg-white rounded-2xl shadow-wildlife overflow-hidden border border-wildlife-green/20">          <thead className="bg-wildlife-green text-white">
             <tr>
               <th className="px-6 py-4 text-left font-semibold">Asset Name</th>
               <th className="px-6 py-4 text-left font-semibold">Type</th>
@@ -307,6 +309,7 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
               <th className="px-6 py-4 text-left font-semibold">Acquired</th>
               <th className="px-6 py-4 text-left font-semibold">Date</th>
               <th className="px-6 py-4 text-left font-semibold">Wildlife Center</th>
+              <th className="px-6 py-4 text-left font-semibold">Logged By</th>
             </tr>
           </thead>
           <tbody>
@@ -340,10 +343,21 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
                 </td>
                 <td className="px-6 py-4 text-wildlife-brown">
                   {new Date(asset.date).toLocaleDateString('en-IN')}
+                </td>                <td className="px-6 py-4">
+                  <div className="text-sm">
+                    <div className="font-medium text-wildlife-black">{asset.site}</div>
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-sm">
-                    <div className="font-medium text-wildlife-black">{asset.site}</div>
+                    <div className="font-medium text-wildlife-black">
+                      {asset.loggedBy?.name || 'Unknown'}
+                    </div>
+                    {asset.loggedBy?.email && (
+                      <div className="text-xs text-wildlife-brown">
+                        {asset.loggedBy.email}
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>

@@ -30,6 +30,16 @@ const assetSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true
+  },
+  loggedBy: {
+    name: {
+      type: String,
+      required: true
+    },
+    email: {
+      type: String,
+      required: true
+    }
   }
 }, {
   timestamps: true // Adds createdAt and updatedAt automatically
