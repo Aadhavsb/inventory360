@@ -100,9 +100,8 @@ export default function LoginPage() {
         {/* Conservation mission statement */}
         <div className="mt-8 text-center">
           <div className="bg-wildlife-green/10 rounded-2xl p-4 border border-wildlife-green/20">
-            <div className="text-2xl mb-2">🌍</div>
-            <p className="text-sm text-wildlife-brown italic">
-              "Together, we protect and preserve wildlife for future generations"
+            <div className="text-2xl mb-2">🌍</div>            <p className="text-sm text-wildlife-brown italic">
+              &ldquo;Together, we protect and preserve wildlife for future generations&rdquo;
             </p>
           </div>
         </div>

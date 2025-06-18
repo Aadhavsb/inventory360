@@ -1,6 +1,7 @@
-/* Tailwind v4+ syntax: use @import for preflight and utilities, remove @apply */
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
+/* Tailwind CSS imports */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 @import "@fontsource/poppins/400.css";
 @import "@fontsource/poppins/500.css";
 @import "@fontsource/poppins/700.css";

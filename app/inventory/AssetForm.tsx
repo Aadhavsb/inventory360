@@ -30,8 +30,7 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-
-  async function onSubmit(data: any) {
+  async function onSubmit(data: Record<string, string>) {
     setError('');
     setSuccess('');
     
@@ -53,7 +52,7 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
         const errorData = await res.json();
         setError(errorData.error || 'Failed to add conservation asset');
       }
-    } catch (err) {
+    } catch {
       setError('Network error - please check your connection');
     }
   }

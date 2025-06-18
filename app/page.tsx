@@ -96,7 +96,7 @@ export default function Home() {
 
         {/* Wildlife conservation message */}
         <div className="pt-6 text-xs text-wildlife-brown/70 italic">
-          "Every asset tracked helps us save more wildlife" - Wildlife SOS Team
+          &ldquo;Every asset tracked helps us save more wildlife&rdquo; - Wildlife SOS Team
         </div>
       </div>
     </div>
