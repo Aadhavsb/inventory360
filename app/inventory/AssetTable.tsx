@@ -16,64 +16,247 @@ const AssetTable: FC = () => {
   const [search, setSearch] = useState('');
   const [filtered, setFiltered] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     async function fetchAssets() {
       setLoading(true);
-      const res = await fetch('/api/asset');
-      const data = await res.json();
-      setAssets(data.assets || []);
+      try {
+        const res = await fetch('/api/asset');
+        const data = await res.json();
+        setAssets(data.assets || []);
+      } catch (error) {
+        console.error('Failed to fetch assets:', error);
+      }
       setLoading(false);
     }
     fetchAssets();
   }, []);
 
   useEffect(() => {
-    setFiltered(
-      assets.filter(a =>
-        a.name.toLowerCase().includes(search.toLowerCase()) ||
-        a.site.toLowerCase().includes(search.toLowerCase())
-      )
+    let result = assets.filter(a =>
+      a.name.toLowerCase().includes(search.toLowerCase()) ||
+      a.site.toLowerCase().includes(search.toLowerCase()) ||
+      a.type.toLowerCase().includes(search.toLowerCase())
     );
-  }, [search, assets]);
 
-  if (loading) return <div className="animate-pulse">Loading assets...</div>;
+    if (filter !== 'all') {
+      result = result.filter(a => a.type === filter);
+    }
+
+    setFiltered(result);
+  }, [search, assets, filter]);
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'medical': return '🏥';
+      case 'long-term': return '🏗️';
+      case 'perishable': return '⏰';
+      default: return '📦';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return '🌿';
+      case 'phased out': return '💀';
+      default: return '❓';
+    }
+  };
+
+  const getAcquiredIcon = (acquired: string) => {
+    switch (acquired) {
+      case 'donated': return '🤝';
+      case 'bought': return '💰';
+      default: return '📋';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'text-wildlife-green bg-wildlife-green/10';
+      case 'phased out': return 'text-red-600 bg-red-50';
+      default: return 'text-wildlife-brown bg-wildlife-brown/10';
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'medical': return 'text-red-600 bg-red-50';
+      case 'long-term': return 'text-wildlife-green bg-wildlife-green/10';
+      case 'perishable': return 'text-orange-600 bg-orange-50';
+      default: return 'text-wildlife-brown bg-wildlife-brown/10';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-12 font-wildlife">
+        <div className="text-6xl mb-4">🐻</div>
+        <div className="text-wildlife-green font-semibold text-lg">Loading conservation assets...</div>
+        <div className="text-wildlife-brown text-sm mt-2">Fetching inventory from rescue centers</div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <input
-        className="input mb-4"
-        placeholder="Search by name or site..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-      />
-      <table className="min-w-full bg-white rounded shadow overflow-x-auto">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="p-2">Name</th>
-            <th className="p-2">Type</th>
-            <th className="p-2">Status</th>
-            <th className="p-2">Acquired</th>
-            <th className="p-2">Date</th>
-            <th className="p-2">Site</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map(asset => (
-            <tr key={asset._id} className="border-t">
-              <td className="p-2">{asset.name}</td>
-              <td className="p-2">{asset.type}</td>
-              <td className="p-2">{asset.status}</td>
-              <td className="p-2">{asset.acquired}</td>
-              <td className="p-2">{asset.date}</td>
-              <td className="p-2">{asset.site}</td>
-            </tr>
-          ))}
-          {filtered.length === 0 && (
-            <tr><td colSpan={6} className="text-center p-4">No assets found.</td></tr>
+    <div className="font-wildlife">
+      {/* Search and Filter Controls */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
+          {/* Search Input */}
+          <div className="flex-1">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-wildlife-brown">🔍</span>
+              <input
+                className="input pl-10"
+                placeholder="Search by name, site, or type..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Filter Dropdown */}
+          <div className="md:w-64">
+            <select 
+              className="input" 
+              value={filter} 
+              onChange={e => setFilter(e.target.value)}
+            >
+              <option value="all">🌍 All Asset Types</option>
+              <option value="medical">🏥 Medical Supplies</option>
+              <option value="long-term">🏗️ Long-term Equipment</option>
+              <option value="perishable">⏰ Perishable Items</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Results Summary */}
+        <div className="flex items-center justify-between text-sm text-wildlife-brown">
+          <span>
+            Showing {filtered.length} of {assets.length} conservation assets
+          </span>
+          {search && (
+            <button 
+              onClick={() => setSearch('')}
+              className="text-wildlife-green hover:text-wildlife-green-dark"
+            >
+              🔄 Clear search
+            </button>
           )}
-        </tbody>
-      </table>
+        </div>
+      </div>
+
+      {/* Assets Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white rounded-2xl shadow-wildlife overflow-hidden border border-wildlife-green/20">
+          <thead className="bg-wildlife-green text-white">
+            <tr>
+              <th className="px-6 py-4 text-left font-semibold">Asset Name</th>
+              <th className="px-6 py-4 text-left font-semibold">Type</th>
+              <th className="px-6 py-4 text-left font-semibold">Status</th>
+              <th className="px-6 py-4 text-left font-semibold">Acquired</th>
+              <th className="px-6 py-4 text-left font-semibold">Date</th>
+              <th className="px-6 py-4 text-left font-semibold">Wildlife Center</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((asset, index) => (
+              <tr 
+                key={asset._id} 
+                className={`border-b border-wildlife-green/10 hover:bg-wildlife-green/5 transition-colors ${
+                  index % 2 === 0 ? 'bg-white' : 'bg-wildlife-ivory/30'
+                }`}
+              >
+                <td className="px-6 py-4">
+                  <div className="font-medium text-wildlife-black">{asset.name}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(asset.type)}`}>
+                    <span>{getTypeIcon(asset.type)}</span>
+                    <span className="capitalize">{asset.type}</span>
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(asset.status)}`}>
+                    <span>{getStatusIcon(asset.status)}</span>
+                    <span className="capitalize">{asset.status}</span>
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <span className="inline-flex items-center space-x-1 text-wildlife-brown">
+                    <span>{getAcquiredIcon(asset.acquired)}</span>
+                    <span className="capitalize">{asset.acquired}</span>
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-wildlife-brown">
+                  {new Date(asset.date).toLocaleDateString('en-IN')}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm">
+                    <div className="font-medium text-wildlife-black">{asset.site}</div>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Empty State */}
+        {filtered.length === 0 && !loading && (
+          <div className="text-center py-12 bg-white rounded-2xl shadow-wildlife border border-wildlife-green/20">
+            <div className="text-6xl mb-4">🦎</div>
+            <h3 className="text-xl font-semibold text-wildlife-black mb-2">
+              No conservation assets found
+            </h3>
+            <p className="text-wildlife-brown mb-4">
+              {search ? 
+                `No assets match "${search}". Try adjusting your search terms.` : 
+                'Start by adding your first conservation asset to the inventory.'
+              }
+            </p>
+            {search && (
+              <button 
+                onClick={() => setSearch('')}
+                className="btn-wildlife"
+              >
+                🔄 Clear search and show all
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Conservation Stats */}
+      {assets.length > 0 && (
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl p-4 shadow-wildlife border border-wildlife-green/20 text-center">
+            <div className="text-2xl text-wildlife-green font-bold">
+              {assets.filter(a => a.status === 'active').length}
+            </div>
+            <div className="text-sm text-wildlife-brown">🌿 Active Assets</div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-wildlife border border-wildlife-green/20 text-center">
+            <div className="text-2xl text-wildlife-green font-bold">
+              {assets.filter(a => a.type === 'medical').length}
+            </div>
+            <div className="text-sm text-wildlife-brown">🏥 Medical Supplies</div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-wildlife border border-wildlife-green/20 text-center">
+            <div className="text-2xl text-wildlife-green font-bold">
+              {assets.filter(a => a.acquired === 'donated').length}
+            </div>
+            <div className="text-sm text-wildlife-brown">🤝 Donated Items</div>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-wildlife border border-wildlife-green/20 text-center">
+            <div className="text-2xl text-wildlife-green font-bold">
+              {new Set(assets.map(a => a.site)).size}
+            </div>
+            <div className="text-sm text-wildlife-brown">🏥 Centers</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

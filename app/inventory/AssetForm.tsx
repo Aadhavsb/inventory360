@@ -2,90 +2,187 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { assetSchema } from '@/lib/validation';
-import type { FC } from 'react';
-import { z } from 'zod';
 import { useState } from 'react';
 
 interface AssetFormProps {
   onSuccess?: () => void;
 }
 
-type AssetInput = z.infer<typeof assetSchema>;
+// Wildlife conservation sites in India
+const wildlifeSites = [
+  'Agra Bear Rescue Facility',
+  'Bannerghatta Bear Rescue Center',
+  'Van Vihar Rescue Center',
+  'Pune Leopard Rescue Center',
+  'Delhi Wildlife Rescue',
+  'Mumbai Elephant Rescue',
+  'Goa Wildlife Sanctuary',
+  'Kerala Elephant Care Center',
+  'Tamil Nadu Bear Sanctuary',
+  'Rajasthan Wildlife Hospital',
+  'Gujarat Lion Rescue',
+  'West Bengal Tiger Care Unit'
+];
 
-const AssetForm: FC<AssetFormProps> = ({ onSuccess }) => {
+export default function AssetForm({ onSuccess }: AssetFormProps) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(assetSchema),
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  async function onSubmit(data: AssetInput) {
+  async function onSubmit(data: any) {
     setError('');
-    const res = await fetch('/api/asset', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) {
-      reset();
-      onSuccess?.();
-    } else {
-      setError('Failed to add asset');
+    setSuccess('');
+    
+    try {
+      const res = await fetch('/api/asset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      
+      if (res.ok) {
+        setSuccess('🎉 Asset added successfully to conservation inventory!');
+        reset();
+        setTimeout(() => {
+          onSuccess?.();
+          setSuccess('');
+        }, 2000);
+      } else {
+        const errorData = await res.json();
+        setError(errorData.error || 'Failed to add conservation asset');
+      }
+    } catch (err) {
+      setError('Network error - please check your connection');
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-4 rounded shadow mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label className="block mb-1">Name</label>
-        <input {...register('name')} className="input" />
-        {errors.name && <span className="text-red-500 text-sm">{errors.name.message}</span>}
-      </div>
-      <div>
-        <label className="block mb-1">Type</label>
-        <select {...register('type')} className="input">
-          <option value="">Select</option>
-          <option value="long-term">Long-term</option>
-          <option value="medical">Medical</option>
-          <option value="perishable">Perishable</option>
-        </select>
-        {errors.type && <span className="text-red-500 text-sm">{errors.type.message}</span>}
-      </div>
-      <div>
-        <label className="block mb-1">Status</label>
-        <select {...register('status')} className="input">
-          <option value="">Select</option>
-          <option value="active">Active</option>
-          <option value="phased out">Phased Out</option>
-        </select>
-        {errors.status && <span className="text-red-500 text-sm">{errors.status.message}</span>}
-      </div>
-      <div>
-        <label className="block mb-1">Acquired</label>
-        <select {...register('acquired')} className="input">
-          <option value="">Select</option>
-          <option value="donated">Donated</option>
-          <option value="bought">Bought</option>
-        </select>
-        {errors.acquired && <span className="text-red-500 text-sm">{errors.acquired.message}</span>}
-      </div>
-      <div>
-        <label className="block mb-1">Date</label>
-        <input type="date" {...register('date')} className="input" />
-        {errors.date && <span className="text-red-500 text-sm">{errors.date.message}</span>}
-      </div>
-      <div>
-        <label className="block mb-1">Site</label>
-        <input {...register('site')} className="input" />
-        {errors.site && <span className="text-red-500 text-sm">{errors.site.message}</span>}
-      </div>
-      <div className="col-span-full flex gap-2 mt-2">
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded" disabled={isSubmitting}>
-          {isSubmitting ? 'Adding...' : 'Add Asset'}
-        </button>
-        {error && <span className="text-red-500 ml-2">{error}</span>}
-      </div>
-    </form>
+    <div className="font-wildlife">
+      {/* Success/Error Messages */}      {success && (
+        <div className="mb-4 p-3 bg-wildlife-green/10 border border-wildlife-green/30 rounded-xl text-wildlife-green text-sm font-medium">
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium">
+          ⚠️ {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Asset Name */}
+          <div>
+            <label className="block text-sm font-semibold text-wildlife-black mb-2">
+              📝 Asset Name *
+            </label>
+            <input 
+              {...register('name')} 
+              className="input" 
+              placeholder="e.g., Medical Oxygen Tank, Bear Enclosure Gate..."
+            />
+            {errors.name && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.name.message}</span>}
+          </div>
+
+          {/* Asset Type */}
+          <div>
+            <label className="block text-sm font-semibold text-wildlife-black mb-2">
+              🏷️ Asset Type *
+            </label>
+            <select {...register('type')} className="input">
+              <option value="">Select asset type...</option>
+              <option value="long-term">🏗️ Long-term Equipment</option>
+              <option value="medical">🏥 Medical Supplies</option>
+              <option value="perishable">⏰ Perishable Items</option>
+            </select>
+            {errors.type && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.type.message}</span>}
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-semibold text-wildlife-black mb-2">
+              📊 Asset Status *
+            </label>
+            <select {...register('status')} className="input">
+              <option value="">Select status...</option>
+              <option value="active">🌿 Active - In Use</option>
+              <option value="phased out">💀 Phased Out - Retired</option>
+            </select>
+            {errors.status && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.status.message}</span>}
+          </div>
+
+          {/* Acquisition Method */}
+          <div>
+            <label className="block text-sm font-semibold text-wildlife-black mb-2">
+              💼 How Acquired *
+            </label>
+            <select {...register('acquired')} className="input">
+              <option value="">Select method...</option>
+              <option value="donated">🤝 Donated - Gift/Grant</option>
+              <option value="bought">💰 Purchased - Funded</option>
+            </select>
+            {errors.acquired && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.acquired.message}</span>}
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className="block text-sm font-semibold text-wildlife-black mb-2">
+              📅 Date Acquired *
+            </label>
+            <input 
+              type="date" 
+              {...register('date')} 
+              className="input"
+              max={new Date().toISOString().split('T')[0]}
+            />
+            {errors.date && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.date.message}</span>}
+          </div>
+
+          {/* Wildlife Site */}
+          <div>
+            <label className="block text-sm font-semibold text-wildlife-black mb-2">
+              🏥 Wildlife Center *
+            </label>
+            <select {...register('site')} className="input">
+              <option value="">Select rescue center...</option>
+              {wildlifeSites.map(site => (
+                <option key={site} value={site}>{site}</option>
+              ))}
+            </select>
+            {errors.site && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.site.message}</span>}
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="flex justify-end space-x-4 pt-4 border-t border-wildlife-green/20">
+          <button 
+            type="button"
+            className="px-6 py-3 border border-wildlife-green/30 text-wildlife-brown rounded-xl hover:bg-wildlife-green/5 transition-colors duration-200"
+            onClick={() => reset()}
+          >
+            🔄 Reset Form
+          </button>
+          <button 
+            type="submit" 
+            className="btn-wildlife px-8 py-3 flex items-center space-x-2" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                <span>Adding to Inventory...</span>
+              </>
+            ) : (
+              <>
+                <span>🦎</span>
+                <span>Add Conservation Asset</span>
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
-
-export default AssetForm;
