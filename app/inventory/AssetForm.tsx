@@ -36,15 +36,19 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
     
     console.log('Form data being submitted:', data);
     
-    try {
-      const res = await fetch('/api/asset', {
+    try {      const res = await fetch('/api/asset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+        const responseData = await res.json();
+      console.log('API response status:', res.status);
+      console.log('API response ok:', res.ok);
+      console.log('API response data:', JSON.stringify(responseData, null, 2));
+      console.log('Response has success property:', 'success' in responseData);
+      console.log('Response.success value:', responseData.success);
       
-      const responseData = await res.json();
-      console.log('API response:', responseData);      if (res.ok) {
+      if (res.ok && responseData.success) {
         setSuccess('🎉 Asset added successfully to conservation inventory!');
         reset();
         setTimeout(() => {
