@@ -10,13 +10,29 @@ interface InventoryPageProps {
 }
 
 const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  if (!session) {
-    router.push('/login');
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-wildlife-ivory font-wildlife flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">🐻</div>
+          <div className="text-wildlife-black">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (status === 'unauthenticated') {
+    // Only redirect on client side
+    if (typeof window !== 'undefined') {
+      router.push('/login');
+    }
     return null;
   }
   const handleAssetAdded = () => {

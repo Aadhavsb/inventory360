@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import Asset from '@/lib/models/Asset';
 import { assetSchema } from '@/lib/validation';

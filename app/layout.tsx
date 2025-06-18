@@ -18,13 +18,17 @@ export const metadata: Metadata = {
   description: "Conservation asset management system for Wildlife SOS rescue centers across India. Track medical supplies, equipment, and resources for wildlife care.",
   keywords: ["Wildlife SOS", "Asset Management", "Conservation", "Inventory", "Wildlife Rescue"],
   authors: [{ name: "Wildlife SOS" }],
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#2D5A27",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
     ],
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#2D5A27",
 };
 
 export default function RootLayout({
