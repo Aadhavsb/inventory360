@@ -30,18 +30,30 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
     resolver: zodResolver(assetSchema),
   });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');  async function onSubmit(data: z.infer<typeof assetSchema>) {
+  const [success, setSuccess] = useState('');
+  // Debug form state
+  console.log('🔍 Form errors:', errors);
+  console.log('🔍 Is submitting:', isSubmitting);
+
+  async function onSubmit(data: z.infer<typeof assetSchema>) {
     console.log('🚀 FORM SUBMIT TRIGGERED');
-    console.log('Form data being submitted:', data);
+    console.log('📊 Form data being submitted:', data);
+    console.log('📊 Data keys:', Object.keys(data));
+    console.log('📊 Data values:', Object.values(data));
     
     setError('');
     setSuccess('');
     
-    try {const res = await fetch('/api/asset', {
+    try {
+      console.log('🌐 Making API request to /api/asset');
+      const res = await fetch('/api/asset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      
+      console.log('📡 Response received - status:', res.status);
+      console.log('📡 Response ok:', res.ok);
         const responseData = await res.json();
       console.log('API response status:', res.status);
       console.log('API response ok:', res.ok);
@@ -118,7 +130,10 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={(e) => {
+        console.log('📋 FORM ONSUBMIT TRIGGERED');
+        handleSubmit(onSubmit)(e);
+      }} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Asset Name */}
           <div>
