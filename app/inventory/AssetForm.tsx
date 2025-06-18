@@ -1,7 +1,7 @@
 "use client";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { assetSchema } from '@/lib/validation';
+import { assetFormSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { useState } from 'react';
 
@@ -27,7 +27,7 @@ const wildlifeSites = [
 
 export default function AssetForm({ onSuccess }: AssetFormProps) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
-    resolver: zodResolver(assetSchema),
+    resolver: zodResolver(assetFormSchema),
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -35,7 +35,7 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
   console.log('🔍 Form errors:', errors);
   console.log('🔍 Is submitting:', isSubmitting);
 
-  async function onSubmit(data: z.infer<typeof assetSchema>) {
+  async function onSubmit(data: z.infer<typeof assetFormSchema>) {
     console.log('🚀 FORM SUBMIT TRIGGERED');
     console.log('📊 Form data being submitted:', data);
     console.log('📊 Data keys:', Object.keys(data));
@@ -212,9 +212,22 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
               {wildlifeSites.map(site => (
                 <option key={site} value={site}>{site}</option>
               ))}
-            </select>
-            {errors.site && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.site.message}</span>}
+            </select>            {errors.site && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.site.message}</span>}
           </div>
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-semibold text-wildlife-black mb-2">
+            📝 Description
+          </label>
+          <textarea 
+            {...register('description')} 
+            className="input min-h-[100px] resize-vertical" 
+            placeholder="Additional details about the asset..."
+            rows={4}
+          />
+          {errors.description && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.description.message}</span>}
         </div>
 
         {/* Submit Button */}

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-export const assetSchema = z.object({
+// Client-side schema (without loggedBy - this is added on the server)
+export const assetFormSchema = z.object({
   name: z.string().min(1, 'Asset name is required'),
   type: z.enum(['long-term', 'medical', 'perishable'], {
     errorMap: () => ({ message: 'Please select a valid asset type' })
@@ -17,8 +18,16 @@ export const assetSchema = z.object({
     return !isNaN(parsedDate.getTime());
   }, 'Please enter a valid date'),
   site: z.string().min(1, 'Please select a wildlife site'),
+  description: z.string().optional()
+});
+
+// Server-side schema (includes loggedBy)
+export const assetSchema = assetFormSchema.extend({
   loggedBy: z.object({
     name: z.string().min(1, 'User name is required'),
     email: z.string().email('Valid email is required')
   })
 });
+
+// Export the client schema as the default for backward compatibility
+export { assetFormSchema as default };
