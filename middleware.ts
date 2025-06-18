@@ -3,12 +3,13 @@ import type { NextRequest } from 'next/server';
 
 const RATE_LIMIT = 60; // requests per minute
 const WINDOW = 60 * 1000; // 1 minute
-const ipCache = new Map();
+const ipCache: Map<string, { count: number; start: number }> = new Map();
 
 export function middleware(req: NextRequest) {
-  const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown';
+  // NextRequest does not have 'ip' property, so only use x-forwarded-for or fallback
+  const ip = req.headers.get('x-forwarded-for') ?? 'unknown';
   const now = Date.now();
-  const entry = ipCache.get(ip) || { count: 0, start: now };
+  const entry = ipCache.get(ip) ?? { count: 0, start: now };
 
   if (now - entry.start > WINDOW) {
     entry.count = 1;
