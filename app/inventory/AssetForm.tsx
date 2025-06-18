@@ -29,10 +29,11 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
     resolver: zodResolver(assetSchema),
   });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  async function onSubmit(data: Record<string, string>) {
+  const [success, setSuccess] = useState('');  async function onSubmit(data: any) {
     setError('');
     setSuccess('');
+    
+    console.log('Form data being submitted:', data);
     
     try {
       const res = await fetch('/api/asset', {
@@ -40,6 +41,9 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      
+      const responseData = await res.json();
+      console.log('API response:', responseData);
       
       if (res.ok) {
         setSuccess('🎉 Asset added successfully to conservation inventory!');
@@ -49,10 +53,27 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
           setSuccess('');
         }, 2000);
       } else {
-        const errorData = await res.json();
-        setError(errorData.error || 'Failed to add conservation asset');
+        console.error('API error:', responseData);
+        let errorMessage = 'Failed to add conservation asset';
+        
+        if (responseData.details) {
+          if (Array.isArray(responseData.details)) {
+            // Zod validation errors
+            errorMessage = responseData.details.map((err: any) => 
+              `${err.path?.join('.')}: ${err.message}`
+            ).join(', ');
+          } else {
+            // MongoDB or other errors
+            errorMessage = responseData.details;
+          }
+        } else if (responseData.error) {
+          errorMessage = responseData.error;
+        }
+        
+        setError(errorMessage);
       }
-    } catch {
+    } catch (err) {
+      console.error('Network error:', err);
       setError('Network error - please check your connection');
     }
   }
