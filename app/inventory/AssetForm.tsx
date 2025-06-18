@@ -2,6 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { assetSchema } from '@/lib/validation';
+import { z } from 'zod';
 import { useState } from 'react';
 
 interface AssetFormProps {
@@ -29,7 +30,7 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
     resolver: zodResolver(assetSchema),
   });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');  async function onSubmit(data: any) {
+  const [success, setSuccess] = useState('');  async function onSubmit(data: z.infer<typeof assetSchema>) {
     setError('');
     setSuccess('');
     
@@ -57,9 +58,8 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
         let errorMessage = 'Failed to add conservation asset';
         
         if (responseData.details) {
-          if (Array.isArray(responseData.details)) {
-            // Zod validation errors
-            errorMessage = responseData.details.map((err: any) => 
+          if (Array.isArray(responseData.details)) {            // Zod validation errors
+            errorMessage = responseData.details.map((err: { path?: string[]; message: string }) => 
               `${err.path?.join('.')}: ${err.message}`
             ).join(', ');
           } else {

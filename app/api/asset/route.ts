@@ -17,32 +17,58 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  console.log('POST /api/asset - Starting request processing');
+  console.log('Environment check - MONGODB_URI exists:', !!process.env.MONGODB_URI);
+  console.log('Environment check - NODE_ENV:', process.env.NODE_ENV);
+  
   try {
+    console.log('Step 1: Parsing request body...');
     const data = await req.json();
-    console.log('Received data:', data);
+    console.log('Received data:', JSON.stringify(data, null, 2));
     
+    console.log('Step 2: Validating data with schema...');
     const parse = assetSchema.safeParse(data);
     if (!parse.success) {
-      console.log('Validation failed:', parse.error.errors);
+      console.log('Validation failed:', JSON.stringify(parse.error.errors, null, 2));
       return NextResponse.json({ 
         error: 'Invalid asset data', 
         details: parse.error.errors 
       }, { status: 400 });
     }
-      console.log('Validation passed, connecting to MongoDB...');
+    console.log('Validation passed, validated data:', JSON.stringify(parse.data, null, 2));
+    
+    console.log('Step 3: Connecting to MongoDB...');
     const client = await clientPromise;
+    console.log('MongoDB client connected successfully');
+    
+    console.log('Step 4: Getting database instance...');
     const db = client.db('Inventory360');
+    console.log('Database instance obtained');
     
-    console.log('Inserting asset:', parse.data);
+    console.log('Step 5: Inserting document...');
     const result = await db.collection('assets').insertOne(parse.data);
+    console.log('Asset inserted successfully with ID:', result.insertedId);
     
-    console.log('Asset inserted successfully:', result.insertedId);
-    return NextResponse.json({ insertedId: result.insertedId });
+    return NextResponse.json({ 
+      success: true,
+      insertedId: result.insertedId 
+    });
   } catch (error) {
-    console.error('Error in POST /api/asset:', error);
+    console.error('ERROR in POST /api/asset:');
+    console.error('Error type:', typeof error);
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Full error object:', error);
+    
+    // Return more detailed error information
     return NextResponse.json({ 
       error: 'Failed to add asset', 
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        type: error instanceof Error ? error.name : typeof error,
+        stack: error instanceof Error ? error.stack : 'No stack trace available'
+      }
     }, { status: 500 });
   }
 }
