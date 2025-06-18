@@ -31,12 +31,13 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');  async function onSubmit(data: z.infer<typeof assetSchema>) {
+    console.log('🚀 FORM SUBMIT TRIGGERED');
+    console.log('Form data being submitted:', data);
+    
     setError('');
     setSuccess('');
     
-    console.log('Form data being submitted:', data);
-    
-    try {      const res = await fetch('/api/asset', {
+    try {const res = await fetch('/api/asset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -209,11 +210,11 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
             onClick={() => reset()}
           >
             🔄 Reset Form
-          </button>
-          <button 
+          </button>          <button 
             type="submit" 
             className="btn-wildlife px-8 py-3 flex items-center space-x-2" 
             disabled={isSubmitting}
+            onClick={() => console.log('🔥 SUBMIT BUTTON CLICKED!')}
           >
             {isSubmitting ? (
               <>
