@@ -1,47 +1,49 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import connectToDatabase from '@/lib/mongodb';
+import Asset from '@/lib/models/Asset';
+import mongoose from 'mongoose';
 
 export async function GET() {
   try {
-    console.log('Debug endpoint - Testing MongoDB connection...');
+    console.log('Debug endpoint - Testing Mongoose connection...');
     console.log('Environment variables check:');
     console.log('- MONGODB_URI exists:', !!process.env.MONGODB_URI);
     console.log('- NODE_ENV:', process.env.NODE_ENV);
     console.log('- URI format check (first 20 chars):', process.env.MONGODB_URI?.substring(0, 20));
-    console.log('- URI contains ssl params:', process.env.MONGODB_URI?.includes('ssl=true'));
-    console.log('- URI contains retryWrites:', process.env.MONGODB_URI?.includes('retryWrites'));
-    console.log('- URI contains w=majority:', process.env.MONGODB_URI?.includes('w=majority'));
     
-    const client = await clientPromise;
-    console.log('MongoDB client connected successfully');
+    await connectToDatabase();
+    console.log('Mongoose connected successfully');
     
-    const db = client.db('Inventory360');
-    console.log('Database instance obtained');
-    
-    // Test a simple operation
-    const collections = await db.listCollections().toArray();
-    console.log('Collections found:', collections.map(c => c.name));
+    // Test database operations
+    const assetsCount = await Asset.countDocuments();
+    console.log('Assets count:', assetsCount);
     
     // Test inserting a dummy document
-    const testResult = await db.collection('debug').insertOne({
-      test: true,
-      timestamp: new Date(),
-      environment: process.env.NODE_ENV
+    const testAsset = new Asset({
+      name: 'Debug Test Asset',
+      type: 'medical',
+      status: 'active',
+      acquired: 'donated',
+      date: new Date(),
+      site: 'Debug Center'
     });
-    console.log('Test insert successful:', testResult.insertedId);
+    
+    const savedTest = await testAsset.save();
+    console.log('Test asset created:', savedTest._id);
     
     // Clean up the test document
-    await db.collection('debug').deleteOne({ _id: testResult.insertedId });
-    console.log('Test document cleaned up');
+    await Asset.findByIdAndDelete(savedTest._id);
+    console.log('Test asset cleaned up');
     
     return NextResponse.json({
       success: true,
-      message: 'MongoDB connection and operations successful',
+      message: 'Mongoose connection and operations successful',
       environment: process.env.NODE_ENV,
-      collections: collections.map(c => c.name),
-      testInsertId: testResult.insertedId,
+      assetsCount,
+      testInsertId: savedTest._id,
       uriFormat: process.env.MONGODB_URI?.substring(0, 20),
-      hasSslParams: process.env.MONGODB_URI?.includes('ssl=true') || process.env.MONGODB_URI?.includes('tls=true')
+      mongooseVersion: mongoose.version,
+      connectionState: mongoose.connection.readyState // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
     });
     
   } catch (error) {
@@ -53,8 +55,9 @@ export async function GET() {
       environment: process.env.NODE_ENV,
       mongoUriExists: !!process.env.MONGODB_URI,
       uriFormat: process.env.MONGODB_URI?.substring(0, 20),
-      hasSslParams: process.env.MONGODB_URI?.includes('ssl=true') || process.env.MONGODB_URI?.includes('tls=true'),
-      errorType: error instanceof Error ? error.constructor.name : typeof error
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      mongooseVersion: mongoose.version,
+      connectionState: mongoose.connection.readyState
     }, { status: 500 });
   }
 }

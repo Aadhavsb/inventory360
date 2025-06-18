@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import type { WithId, Document } from 'mongodb';
-import clientPromise from '@/lib/mongodb';
+import connectToDatabase from '@/lib/mongodb';
+import Asset from '@/lib/models/Asset';
 import { assetSchema } from '@/lib/validation';
 
 export async function GET() {
   try {
-    const client = await clientPromise;
-    const db = client.db('Inventory360');
-    const assets = await db.collection('assets').find({}).toArray() as WithId<Document>[];
+    await connectToDatabase();
+    const assets = await Asset.find({}).sort({ createdAt: -1 });
     return NextResponse.json({ assets });
   } catch (error) {
     console.error('Error in GET /api/asset:', error);
@@ -51,21 +50,21 @@ export async function POST(req: NextRequest) {
     }
     console.log('Validation passed, validated data:', JSON.stringify(parse.data, null, 2));
     
-    console.log('Step 3: Connecting to MongoDB...');
-    const client = await clientPromise;
-    console.log('MongoDB client connected successfully');
+    console.log('Step 3: Connecting to database...');
+    await connectToDatabase();
+    console.log('Database connected successfully');
     
-    console.log('Step 4: Getting database instance...');
-    const db = client.db('Inventory360');
-    console.log('Database instance obtained');
+    console.log('Step 4: Creating asset document...');
+    const asset = new Asset(parse.data);
     
-    console.log('Step 5: Inserting document...');
-    const result = await db.collection('assets').insertOne(parse.data);
-    console.log('Asset inserted successfully with ID:', result.insertedId);
+    console.log('Step 5: Saving to database...');
+    const savedAsset = await asset.save();
+    console.log('Asset saved successfully with ID:', savedAsset._id);
     
     return NextResponse.json({ 
       success: true,
-      insertedId: result.insertedId 
+      insertedId: savedAsset._id,
+      asset: savedAsset
     });
   } catch (error) {
     console.error('ERROR in POST /api/asset:');
@@ -86,6 +85,15 @@ export async function POST(req: NextRequest) {
         error: 'Database is currently unavailable. Please try again later.',
         type: 'database_unavailable'
       }, { status: 503 });
+    }
+    
+    // Check for validation errors
+    if (error instanceof Error && error.name === 'ValidationError') {
+      return NextResponse.json({ 
+        error: 'Validation failed', 
+        details: error.message,
+        type: 'validation_error'
+      }, { status: 400 });
     }
     
     // Return more detailed error information
