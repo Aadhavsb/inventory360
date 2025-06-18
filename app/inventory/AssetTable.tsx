@@ -22,6 +22,54 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
   const [filter, setFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
 
+  // CSV Export Function
+  const exportToCSV = () => {
+    if (filtered.length === 0) {
+      alert('No assets to export. Please adjust your filters.');
+      return;
+    }
+
+    // CSV Headers
+    const headers = ['Asset Name', 'Type', 'Status', 'Acquired', 'Date', 'Wildlife Center'];
+    
+    // Convert filtered data to CSV format
+    const csvData = filtered.map(asset => [
+      `"${asset.name}"`, // Wrap in quotes to handle commas in names
+      `"${asset.type}"`,
+      `"${asset.status}"`,
+      `"${asset.acquired}"`,
+      `"${new Date(asset.date).toLocaleDateString('en-IN')}"`,
+      `"${asset.site}"`
+    ]);
+
+    // Combine headers and data
+    const csvContent = [headers.join(','), ...csvData.map(row => row.join(','))].join('\n');
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      // Generate filename with current date and filter info
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      let filename = `wildlife_assets_${dateStr}`;
+      
+      if (filter !== 'all') filename += `_${filter}`;
+      if (locationFilter !== 'all') filename += `_${locationFilter.replace(/\s+/g, '_')}`;
+      if (search) filename += `_search_${search.replace(/\s+/g, '_')}`;
+      
+      link.setAttribute('download', `${filename}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   useEffect(() => {
     async function fetchAssets() {
       setLoading(true);
@@ -158,27 +206,42 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
               </select>
             </div>
           </div>
-        </div>
-
-        {/* Results Summary */}
+        </div>        {/* Results Summary */}
         <div className="flex items-center justify-between text-sm text-wildlife-brown">
           <span>
             Showing {filtered.length} of {assets.length} conservation assets
             {filter !== 'all' && ` • Type: ${filter}`}
             {locationFilter !== 'all' && ` • Location: ${locationFilter}`}
           </span>
-          {(search || filter !== 'all' || locationFilter !== 'all') && (
-            <button 
-              onClick={() => {
-                setSearch('');
-                setFilter('all');
-                setLocationFilter('all');
-              }}
-              className="text-wildlife-green hover:text-wildlife-green-dark"
+          <div className="flex items-center space-x-3">
+            {/* CSV Export Button */}
+            <button
+              onClick={exportToCSV}
+              disabled={filtered.length === 0}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 ${
+                filtered.length > 0
+                  ? 'bg-wildlife-green text-white hover:bg-wildlife-green-dark'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              title={filtered.length === 0 ? 'No data to export' : `Export ${filtered.length} assets to CSV`}
             >
-              🔄 Clear all filters
+              <span>📊</span>
+              <span>Export CSV ({filtered.length})</span>
             </button>
-          )}
+            
+            {(search || filter !== 'all' || locationFilter !== 'all') && (
+              <button 
+                onClick={() => {
+                  setSearch('');
+                  setFilter('all');
+                  setLocationFilter('all');
+                }}
+                className="text-wildlife-green hover:text-wildlife-green-dark"
+              >
+                🔄 Clear all filters
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
