@@ -11,12 +11,12 @@ interface Asset {
   site: string;
 }
 
-const AssetTable: FC = () => {
-  const [assets, setAssets] = useState<Asset[]>([]);
+const AssetTable: FC = () => {  const [assets, setAssets] = useState<Asset[]>([]);
   const [search, setSearch] = useState('');
   const [filtered, setFiltered] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
 
   useEffect(() => {
     async function fetchAssets() {
@@ -32,7 +32,6 @@ const AssetTable: FC = () => {
     }
     fetchAssets();
   }, []);
-
   useEffect(() => {
     let result = assets.filter(a =>
       a.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,8 +43,12 @@ const AssetTable: FC = () => {
       result = result.filter(a => a.type === filter);
     }
 
+    if (locationFilter !== 'all') {
+      result = result.filter(a => a.site === locationFilter);
+    }
+
     setFiltered(result);
-  }, [search, assets, filter]);
+  }, [search, assets, filter, locationFilter]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -100,10 +103,9 @@ const AssetTable: FC = () => {
   }
 
   return (
-    <div className="font-wildlife">
-      {/* Search and Filter Controls */}
+    <div className="font-wildlife">      {/* Search and Filter Controls */}
       <div className="mb-6 space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center space-y-4 md:space-y-0 md:space-x-4">
+        <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Search Input */}
           <div className="flex-1">
             <div className="relative">
@@ -117,18 +119,41 @@ const AssetTable: FC = () => {
             </div>
           </div>
 
-          {/* Filter Dropdown */}
-          <div className="md:w-64">
-            <select 
-              className="input" 
-              value={filter} 
-              onChange={e => setFilter(e.target.value)}
-            >
-              <option value="all">🌍 All Asset Types</option>
-              <option value="medical">🏥 Medical Supplies</option>
-              <option value="long-term">🏗️ Long-term Equipment</option>
-              <option value="perishable">⏰ Perishable Items</option>
-            </select>
+          {/* Filter Dropdowns */}
+          <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+            {/* Asset Type Filter */}
+            <div className="md:w-56">
+              <select 
+                className="input" 
+                value={filter} 
+                onChange={e => setFilter(e.target.value)}
+              >
+                <option value="all">🌍 All Asset Types</option>
+                <option value="medical">🏥 Medical Supplies</option>
+                <option value="long-term">🏗️ Long-term Equipment</option>
+                <option value="perishable">⏰ Perishable Items</option>
+              </select>
+            </div>
+
+            {/* Location Filter */}
+            <div className="md:w-64">
+              <select 
+                className="input" 
+                value={locationFilter} 
+                onChange={e => setLocationFilter(e.target.value)}
+              >
+                <option value="all">🏥 All Wildlife Centers</option>
+                {/* Dynamic location options */}
+                {Array.from(new Set(assets.map(a => a.site)))
+                  .sort()
+                  .map(site => (
+                    <option key={site} value={site}>
+                      🦎 {site}
+                    </option>
+                  ))
+                }
+              </select>
+            </div>
           </div>
         </div>
 
@@ -136,13 +161,19 @@ const AssetTable: FC = () => {
         <div className="flex items-center justify-between text-sm text-wildlife-brown">
           <span>
             Showing {filtered.length} of {assets.length} conservation assets
+            {filter !== 'all' && ` • Type: ${filter}`}
+            {locationFilter !== 'all' && ` • Location: ${locationFilter}`}
           </span>
-          {search && (
+          {(search || filter !== 'all' || locationFilter !== 'all') && (
             <button 
-              onClick={() => setSearch('')}
+              onClick={() => {
+                setSearch('');
+                setFilter('all');
+                setLocationFilter('all');
+              }}
               className="text-wildlife-green hover:text-wildlife-green-dark"
             >
-              🔄 Clear search
+              🔄 Clear all filters
             </button>
           )}
         </div>
@@ -201,9 +232,7 @@ const AssetTable: FC = () => {
               </tr>
             ))}
           </tbody>
-        </table>
-
-        {/* Empty State */}
+        </table>        {/* Empty State */}
         {filtered.length === 0 && !loading && (
           <div className="text-center py-12 bg-white rounded-2xl shadow-wildlife border border-wildlife-green/20">
             <div className="text-6xl mb-4">🦎</div>
@@ -211,17 +240,21 @@ const AssetTable: FC = () => {
               No conservation assets found
             </h3>
             <p className="text-wildlife-brown mb-4">
-              {search ? 
-                `No assets match "${search}". Try adjusting your search terms.` : 
+              {search || filter !== 'all' || locationFilter !== 'all' ? 
+                `No assets match your current filters. Try adjusting your search terms or filters.` : 
                 'Start by adding your first conservation asset to the inventory.'
               }
             </p>
-            {search && (
+            {(search || filter !== 'all' || locationFilter !== 'all') && (
               <button 
-                onClick={() => setSearch('')}
+                onClick={() => {
+                  setSearch('');
+                  setFilter('all');
+                  setLocationFilter('all');
+                }}
                 className="btn-wildlife"
               >
-                🔄 Clear search and show all
+                🔄 Clear all filters and show all assets
               </button>
             )}
           </div>
