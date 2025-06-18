@@ -2,7 +2,7 @@
 import { useEffect, useState, FC } from 'react';
 
 interface Asset {
-  _id?: string;
+  _id: string;
   name: string;
   type: string;
   status: string;

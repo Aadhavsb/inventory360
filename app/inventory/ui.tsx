@@ -9,12 +9,23 @@ interface InventoryPageProps {
   user: { email?: string };
 }
 
+interface Asset {
+  _id: string;
+  name: string;
+  type: string;
+  status: string;
+  acquired: string;
+  date: string;
+  site: string;
+  description?: string;
+}
+
 const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [editingAsset, setEditingAsset] = useState<any>(null);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
 
   // Show loading state while checking authentication
   if (status === 'loading') {
@@ -38,9 +49,7 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
   }  const handleAssetAdded = () => {
     // Trigger a refresh of the asset table
     setRefreshTrigger(prev => prev + 1);
-  };
-
-  const handleEditAsset = (asset: any) => {
+  };  const handleEditAsset = (asset: Asset) => {
     setEditingAsset(asset);
     setShowForm(true);
   };
