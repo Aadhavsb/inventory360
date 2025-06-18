@@ -6,7 +6,18 @@ import { z } from 'zod';
 import { useState } from 'react';
 
 interface AssetFormProps {
-  onSuccess?: (newAsset?: { success: boolean; insertedId?: string }) => void;
+  onSuccess?: (newAsset?: { success: boolean; insertedId?: string; updatedId?: string }) => void;
+  editAsset?: {
+    _id: string;
+    name: string;
+    type: string;
+    status: string;
+    acquired: string;
+    date: string;
+    site: string;
+    description?: string;
+  } | null;
+  onCancel?: () => void;
 }
 
 // Wildlife SOS conservation sites in India
@@ -25,31 +36,44 @@ const wildlifeSites = [
   'West Bengal Bear Rescue Centre'
 ];
 
-export default function AssetForm({ onSuccess }: AssetFormProps) {
+export default function AssetForm({ onSuccess, editAsset, onCancel }: AssetFormProps) {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(assetFormSchema),
+    defaultValues: editAsset ? {
+      name: editAsset.name,
+      type: editAsset.type as 'long-term' | 'medical' | 'perishable',
+      status: editAsset.status as 'active' | 'phased out',
+      acquired: editAsset.acquired as 'donated' | 'bought',
+      date: editAsset.date,
+      site: editAsset.site,
+      description: editAsset.description || ''
+    } : undefined
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   // Debug form state
   console.log('🔍 Form errors:', errors);
   console.log('🔍 Is submitting:', isSubmitting);
-
   async function onSubmit(data: z.infer<typeof assetFormSchema>) {
     console.log('🚀 FORM SUBMIT TRIGGERED');
     console.log('📊 Form data being submitted:', data);
-    console.log('📊 Data keys:', Object.keys(data));
-    console.log('📊 Data values:', Object.values(data));
+    console.log('📊 Edit mode:', !!editAsset);
+    console.log('📊 Asset ID:', editAsset?._id);
     
     setError('');
     setSuccess('');
     
     try {
-      console.log('🌐 Making API request to /api/asset');
-      const res = await fetch('/api/asset', {
-        method: 'POST',
+      const isUpdate = !!editAsset;
+      const url = '/api/asset';
+      const method = isUpdate ? 'PUT' : 'POST';
+      const payload = isUpdate ? { ...data, id: editAsset._id } : data;
+      
+      console.log('🌐 Making API request to', url, 'with method', method);
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       
       console.log('📡 Response received - status:', res.status);
@@ -59,14 +83,23 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
       console.log('API response ok:', res.ok);
       console.log('API response data:', JSON.stringify(responseData, null, 2));
       console.log('Response has success property:', 'success' in responseData);
-      console.log('Response.success value:', responseData.success);
-        if (res.ok && responseData.success) {
+      console.log('Response.success value:', responseData.success);      if (res.ok && responseData.success) {
         console.log('✅ Success path taken');
-        setSuccess('🎉 Asset added successfully to conservation inventory!');
-        reset();
+        const isUpdate = !!editAsset;
+        const successMessage = isUpdate 
+          ? '🎉 Asset updated successfully in conservation inventory!'
+          : '🎉 Asset added successfully to conservation inventory!';
+        
+        setSuccess(successMessage);
+        
+        if (!isUpdate) {
+          reset(); // Only reset form for new assets
+        }
+        
         setTimeout(() => {
-          onSuccess?.(responseData); // Pass the response data but don't close the form
-        }, 500); // Shorter timeout since we're not clearing the success message
+          onSuccess?.(responseData); // Pass the response data
+        }, 500);
+        
         setTimeout(() => {
           setSuccess('');
         }, 4000); // Clear success message after 4 seconds
@@ -91,10 +124,11 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
         } else if (responseData.error) {
           errorMessage = typeof responseData.error === 'string' ? responseData.error : 'Server error occurred';
         }
-        
-        // Handle specific error types
+          // Handle specific error types
         if (responseData.type === 'database_unavailable') {
           errorMessage = '🔧 Database temporarily unavailable. Please try again in a moment.';
+        } else if (responseData.type === 'not_found') {
+          errorMessage = '❌ Asset not found. It may have been deleted.';
         }
         
         setError(errorMessage);
@@ -228,17 +262,25 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
             rows={4}
           />
           {errors.description && <span className="text-red-500 text-sm mt-1 block">⚠️ {errors.description.message}</span>}
-        </div>
-
-        {/* Submit Button */}
+        </div>        {/* Submit Button */}
         <div className="flex justify-end space-x-4 pt-4 border-t border-wildlife-green/20">
+          {editAsset && (
+            <button 
+              type="button"
+              className="px-6 py-3 border border-wildlife-brown/30 text-wildlife-brown rounded-xl hover:bg-wildlife-brown/5 transition-colors duration-200"
+              onClick={() => onCancel?.()}
+            >
+              ❌ Cancel Edit
+            </button>
+          )}
           <button 
             type="button"
             className="px-6 py-3 border border-wildlife-green/30 text-wildlife-brown rounded-xl hover:bg-wildlife-green/5 transition-colors duration-200"
             onClick={() => reset()}
           >
             🔄 Reset Form
-          </button>          <button 
+          </button>
+          <button 
             type="submit" 
             className="btn-wildlife px-8 py-3 flex items-center space-x-2" 
             disabled={isSubmitting}
@@ -247,12 +289,12 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
             {isSubmitting ? (
               <>
                 <span className="animate-spin">⏳</span>
-                <span>Adding to Inventory...</span>
+                <span>{editAsset ? 'Updating Asset...' : 'Adding to Inventory...'}</span>
               </>
             ) : (
               <>
-                <span>🦎</span>
-                <span>Add Conservation Asset</span>
+                <span>{editAsset ? '✏️' : '🦎'}</span>
+                <span>{editAsset ? 'Update Asset' : 'Add Conservation Asset'}</span>
               </>
             )}
           </button>

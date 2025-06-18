@@ -25,10 +25,13 @@ const assetSchema = new mongoose.Schema({
   date: {
     type: Date,
     required: true
-  },
-  site: {
+  },  site: {
     type: String,
     required: true,
+    trim: true
+  },
+  description: {
+    type: String,
     trim: true
   },
   loggedBy: {

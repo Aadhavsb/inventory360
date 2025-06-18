@@ -14,6 +14,7 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [editingAsset, setEditingAsset] = useState<any>(null);
 
   // Show loading state while checking authentication
   if (status === 'loading') {
@@ -34,10 +35,26 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
       router.push('/login');
     }
     return null;
-  }
-  const handleAssetAdded = () => {
+  }  const handleAssetAdded = () => {
     // Trigger a refresh of the asset table
     setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleEditAsset = (asset: any) => {
+    setEditingAsset(asset);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAsset(null);
+    setShowForm(false);
+  };
+
+  const handleAssetUpdated = () => {
+    // Trigger a refresh of the asset table and close edit mode
+    setRefreshTrigger(prev => prev + 1);
+    setEditingAsset(null);
+    setShowForm(false);
   };
 
   return (
@@ -112,31 +129,51 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
                 <p className="text-wildlife-brown mt-1">
                   Medical supplies, equipment, and resources for wildlife care
                 </p>
-              </div>
-              <button 
+              </div>              <button 
                 className={`btn-wildlife flex items-center space-x-2 ${showForm ? 'bg-wildlife-brown hover:bg-wildlife-brown/80' : ''}`}
-                onClick={() => setShowForm(!showForm)}
+                onClick={() => {
+                  if (showForm && editingAsset) {
+                    handleCancelEdit();
+                  } else {
+                    setShowForm(!showForm);
+                    if (!showForm) {
+                      setEditingAsset(null); // Clear edit mode when opening for new asset
+                    }
+                  }
+                }}
               >
                 <span>{showForm ? '❌' : '➕'}</span>
-                <span>{showForm ? 'Close Form' : 'Add New Asset'}</span>
+                <span>
+                  {showForm 
+                    ? (editingAsset ? 'Cancel Edit' : 'Close Form') 
+                    : 'Add New Asset'
+                  }
+                </span>
               </button>
             </div>
-          </div>
-
-          {/* Asset form */}
+          </div>          {/* Asset form */}
           {showForm && (
             <div className="border-b border-wildlife-green/20 bg-wildlife-green/5">
               <div className="p-6">
                 <div className="flex items-center space-x-2 mb-4">
-                  <span className="text-2xl">🛠️</span>
-                  <h4 className="text-xl font-semibold text-wildlife-black">Add Conservation Asset</h4>
+                  <span className="text-2xl">{editingAsset ? '✏️' : '🛠️'}</span>
+                  <h4 className="text-xl font-semibold text-wildlife-black">
+                    {editingAsset ? 'Edit Conservation Asset' : 'Add Conservation Asset'}
+                  </h4>
                 </div>
-                <AssetForm onSuccess={handleAssetAdded} />
+                <AssetForm 
+                  onSuccess={editingAsset ? handleAssetUpdated : handleAssetAdded}
+                  editAsset={editingAsset}
+                  onCancel={handleCancelEdit}
+                />
               </div>
             </div>
           )}          {/* Asset table */}
           <div className="p-6">
-            <AssetTable refreshTrigger={refreshTrigger} />
+            <AssetTable 
+              refreshTrigger={refreshTrigger} 
+              onEditAsset={handleEditAsset}
+            />
           </div>
         </div>
 

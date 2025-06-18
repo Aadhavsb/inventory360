@@ -126,3 +126,110 @@ export async function POST(req: NextRequest) {
     }, { status: 500 });
   }
 }
+
+export async function PUT(req: NextRequest) {
+  console.log('PUT /api/asset - Starting request processing');
+  
+  try {
+    // Get the user session
+    console.log('Step 1: Getting user session...');
+    const session = await getServerSession(authOptions);
+    
+    if (!session || !session.user) {
+      return NextResponse.json({ 
+        error: 'Unauthorized - Please log in to update assets',
+        type: 'unauthorized'
+      }, { status: 401 });
+    }
+    
+    console.log('User session found:', session.user.email);
+    
+    console.log('Step 2: Parsing request body...');
+    const data = await req.json();
+    console.log('Received data:', JSON.stringify(data, null, 2));
+    
+    // Extract the asset ID
+    const { id, ...updateData } = data;
+    
+    if (!id) {
+      return NextResponse.json({ 
+        error: 'Asset ID is required for updates',
+        type: 'validation_error'
+      }, { status: 400 });
+    }
+    
+    // Add the logged by information to the update data (preserving who last updated)
+    const assetDataWithUser = {
+      ...updateData,
+      loggedBy: {
+        name: session.user.name || session.user.email?.split('@')[0] || 'Unknown User',
+        email: session.user.email || 'unknown@email.com'
+      },
+      updatedAt: new Date()
+    };
+    
+    console.log('Step 3: Validating data with schema...');
+    const parse = assetSchema.safeParse(assetDataWithUser);
+    if (!parse.success) {
+      console.log('Validation failed:', JSON.stringify(parse.error.errors, null, 2));
+      return NextResponse.json({ 
+        error: 'Invalid asset data', 
+        details: parse.error.errors 
+      }, { status: 400 });
+    }
+    console.log('Validation passed, validated data:', JSON.stringify(parse.data, null, 2));
+    
+    console.log('Step 4: Connecting to database...');
+    await connectToDatabase();
+    console.log('Database connected successfully');
+    
+    console.log('Step 5: Updating asset document...');
+    const updatedAsset = await Asset.findByIdAndUpdate(
+      id, 
+      parse.data, 
+      { new: true, runValidators: true }
+    );
+    
+    if (!updatedAsset) {
+      return NextResponse.json({ 
+        error: 'Asset not found',
+        type: 'not_found'
+      }, { status: 404 });
+    }
+    
+    console.log('Asset updated successfully with ID:', updatedAsset._id);
+    
+    return NextResponse.json({ 
+      success: true,
+      updatedId: updatedAsset._id,
+      asset: updatedAsset
+    });
+  } catch (error) {
+    console.error('ERROR in PUT /api/asset:');
+    console.error('Error type:', typeof error);
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Full error object:', error);
+    
+    // Check if it's a MongoDB connection issue
+    if (error instanceof Error && (
+      error.message.includes('MongoServerSelectionError') ||
+      error.message.includes('ENOTFOUND') ||
+      error.message.includes('ssl3_read_bytes') ||
+      error.message.includes('tlsv1 alert')
+    )) {
+      return NextResponse.json({ 
+        error: 'Database is currently unavailable. Please try again later.',
+        type: 'database_unavailable'
+      }, { status: 503 });
+    }
+    
+    // Return more detailed error information
+    return NextResponse.json({ 
+      error: 'Failed to update asset', 
+      details: error instanceof Error ? error.message : 'Unknown error',
+      type: 'server_error'
+    }, { status: 500 });
+  }
+}

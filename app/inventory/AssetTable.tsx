@@ -9,6 +9,7 @@ interface Asset {
   acquired: string;
   date: string;
   site: string;
+  description?: string;
   createdAt?: string;
   updatedAt?: string;
   __v?: number;
@@ -20,9 +21,10 @@ interface Asset {
 
 interface AssetTableProps {
   refreshTrigger?: number;
+  onEditAsset?: (asset: Asset) => void;
 }
 
-const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets, setAssets] = useState<Asset[]>([]);
+const AssetTable: FC<AssetTableProps> = ({ refreshTrigger, onEditAsset }) => {  const [assets, setAssets] = useState<Asset[]>([]);
   const [search, setSearch] = useState('');
   const [filtered, setFiltered] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
@@ -310,6 +312,7 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
               <th className="px-6 py-4 text-left font-semibold">Date</th>
               <th className="px-6 py-4 text-left font-semibold">Wildlife Center</th>
               <th className="px-6 py-4 text-left font-semibold">Logged By</th>
+              <th className="px-6 py-4 text-left font-semibold">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -347,8 +350,7 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
                   <div className="text-sm">
                     <div className="font-medium text-wildlife-black">{asset.site}</div>
                   </div>
-                </td>
-                <td className="px-6 py-4">
+                </td>                <td className="px-6 py-4">
                   <div className="text-sm">
                     <div className="font-medium text-wildlife-black">
                       {asset.loggedBy?.name || 'Unknown'}
@@ -359,6 +361,15 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger }) => {  const [assets
                       </div>
                     )}
                   </div>
+                </td>
+                <td className="px-6 py-4">
+                  <button
+                    onClick={() => onEditAsset?.(asset)}
+                    className="inline-flex items-center space-x-1 px-3 py-1 bg-wildlife-green/10 hover:bg-wildlife-green/20 text-wildlife-green rounded-lg text-sm font-medium transition-colors duration-200"
+                  >
+                    <span>✏️</span>
+                    <span>Edit</span>
+                  </button>
                 </td>
               </tr>
             ))}
