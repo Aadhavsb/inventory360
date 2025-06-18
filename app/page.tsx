@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Wildlife SOS Inventory360 - Conservation Asset Management",
+  description: "Welcome to Inventory360, the comprehensive asset management system for Wildlife SOS rescue centers. Track medical supplies, equipment, and resources for wildlife conservation across India.",
+};
 
 export default function Home() {
   return (
