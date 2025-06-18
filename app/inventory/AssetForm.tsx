@@ -52,22 +52,30 @@ export default function AssetForm({ onSuccess }: AssetFormProps) {
         setTimeout(() => {
           onSuccess?.();
           setSuccess('');
-        }, 2000);
-      } else {
+        }, 2000);      } else {
         console.error('API error:', responseData);
         let errorMessage = 'Failed to add conservation asset';
         
         if (responseData.details) {
-          if (Array.isArray(responseData.details)) {            // Zod validation errors
+          if (Array.isArray(responseData.details)) {
+            // Zod validation errors
             errorMessage = responseData.details.map((err: { path?: string[]; message: string }) => 
               `${err.path?.join('.')}: ${err.message}`
             ).join(', ');
-          } else {
-            // MongoDB or other errors
+          } else if (typeof responseData.details === 'string') {
+            // String error message
             errorMessage = responseData.details;
+          } else {
+            // Object error details
+            errorMessage = responseData.details.message || responseData.details.toString();
           }
         } else if (responseData.error) {
-          errorMessage = responseData.error;
+          errorMessage = typeof responseData.error === 'string' ? responseData.error : 'Server error occurred';
+        }
+        
+        // Handle specific error types
+        if (responseData.type === 'database_unavailable') {
+          errorMessage = '🔧 Database temporarily unavailable. Please try again in a moment.';
         }
         
         setError(errorMessage);
