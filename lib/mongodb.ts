@@ -1,4 +1,4 @@
-import type { MongoClient } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
 let client: MongoClient;
@@ -11,14 +11,16 @@ if (!process.env.MONGODB_URI) {
 if (process.env.NODE_ENV === 'development') {
   // In development mode, use a global variable so that the value
   // is preserved across module reloads caused by HMR (Hot Module Replacement).
-  if (!(global as any)._mongoClientPromise) {
-    client = new (require('mongodb').MongoClient)(uri);
-    (global as any)._mongoClientPromise = client.connect();
+  const globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise?: Promise<MongoClient>;
+  };
+  if (!globalWithMongo._mongoClientPromise) {
+    client = new MongoClient(uri!);
+    globalWithMongo._mongoClientPromise = client.connect();
   }
-  clientPromise = (global as any)._mongoClientPromise;
+  clientPromise = globalWithMongo._mongoClientPromise;
 } else {
-  // In production mode, it's best to not use a global variable.
-  client = new (require('mongodb').MongoClient)(uri);
+  client = new MongoClient(uri!);
   clientPromise = client.connect();
 }
 

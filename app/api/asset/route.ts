@@ -10,7 +10,7 @@ export async function GET() {
     const db = client.db();
     const assets = await db.collection('assets').find({}).toArray() as WithId<Document>[];
     return NextResponse.json({ assets });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch assets' }, { status: 500 });
   }
 }
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const db = client.db();
     const result = await db.collection('assets').insertOne(data);
     return NextResponse.json({ insertedId: result.insertedId });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to add asset' }, { status: 500 });
   }
 }
