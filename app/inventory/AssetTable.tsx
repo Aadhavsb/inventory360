@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, FC } from 'react';
+import Image from 'next/image';
 
 interface Asset {
   _id: string;
@@ -255,7 +256,15 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger, onEditAsset }) => {  
                   .sort()
                   .map(site => (
                     <option key={site} value={site}>
-                      🦎 {site}
+                      <div className="w-6 h-6 relative mr-1">
+                        <Image
+                          src="/download (2).jpg"
+                          alt="Wildlife SOS Logo"
+                          fill
+                          className="object-contain rounded-full"
+                        />
+                      </div>
+                      {site}
                     </option>
                   ))
                 }
@@ -377,7 +386,14 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger, onEditAsset }) => {  
         </table>        {/* Empty State */}
         {filtered.length === 0 && !loading && (
           <div className="text-center py-12 bg-white rounded-2xl shadow-wildlife border border-wildlife-green/20">
-            <div className="text-6xl mb-4">🦎</div>
+            <div className="w-16 h-16 mx-auto mb-4 relative">
+              <Image
+                src="/download (2).jpg"
+                alt="Wildlife SOS Logo"
+                fill
+                className="object-contain rounded-full"
+              />
+            </div>
             <h3 className="text-xl font-semibold text-wildlife-black mb-2">
               No conservation assets found
             </h3>

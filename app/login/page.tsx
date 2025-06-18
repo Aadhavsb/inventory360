@@ -1,16 +1,23 @@
 "use client";
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   if (status === 'loading') {
-    return (
-      <div className="flex items-center justify-center h-screen bg-wildlife-ivory font-wildlife">
+    return (      <div className="flex items-center justify-center h-screen bg-wildlife-ivory font-wildlife">
         <div className="text-center">
-          <div className="text-6xl mb-4">🐻</div>
+          <div className="w-16 h-16 mx-auto mb-4 relative">
+            <Image
+              src="/download (2).jpg"
+              alt="Wildlife SOS Logo"
+              fill
+              className="object-contain rounded-full"
+            />
+          </div>
           <div className="text-wildlife-green font-semibold">Loading...</div>
         </div>
       </div>
@@ -27,7 +34,7 @@ export default function LoginPage() {
       {/* Wildlife background elements */}
       <div className="absolute inset-0 opacity-3">
         <div className="absolute top-16 left-16 text-8xl">🌿</div>
-        <div className="absolute top-40 right-20 text-6xl">🦎</div>
+        <div className="absolute top-40 right-20 text-6xl">🌿</div>
         <div className="absolute bottom-40 left-20 text-7xl">🌳</div>
         <div className="absolute bottom-16 right-16 text-5xl">🍃</div>
       </div>
@@ -35,10 +42,16 @@ export default function LoginPage() {
       <div className="max-w-md w-full relative z-10">
         {/* Wildlife SOS Header */}
         <div className="text-center mb-12">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="w-24 h-24 bg-wildlife-black rounded-full flex items-center justify-center shadow-wildlife">
-                <div className="text-white text-4xl">🐻</div>
+          <div className="flex justify-center mb-6">            <div className="relative">
+              <div className="w-24 h-24 bg-wildlife-black rounded-full flex items-center justify-center shadow-wildlife overflow-hidden">
+                <div className="w-full h-full relative">
+                  <Image
+                    src="/download (2).jpg"
+                    alt="Wildlife SOS Logo"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               </div>
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-wildlife-green rounded-full flex items-center justify-center">
                 <span className="text-white text-xs font-bold">SOS</span>

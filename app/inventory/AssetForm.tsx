@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { assetFormSchema } from '@/lib/validation';
 import { z } from 'zod';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface AssetFormProps {
   onSuccess?: (newAsset?: { success: boolean; insertedId?: string; updatedId?: string }) => void;
@@ -290,10 +291,18 @@ export default function AssetForm({ onSuccess, editAsset, onCancel }: AssetFormP
               <>
                 <span className="animate-spin">⏳</span>
                 <span>{editAsset ? 'Updating Asset...' : 'Adding to Inventory...'}</span>
-              </>
-            ) : (
+              </>            ) : (
               <>
-                <span>{editAsset ? '✏️' : '🦎'}</span>
+                <span>{editAsset ? '✏️' : (
+                  <div className="w-5 h-5 relative">
+                    <Image
+                      src="/download (2).jpg"
+                      alt="Wildlife SOS Logo"
+                      fill
+                      className="object-contain rounded-full"
+                    />
+                  </div>
+                )}</span>
                 <span>{editAsset ? 'Update Asset' : 'Add Conservation Asset'}</span>
               </>
             )}

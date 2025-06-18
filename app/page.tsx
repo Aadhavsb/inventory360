@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Wildlife SOS Inventory360 - Conservation Asset Management",
@@ -11,7 +12,16 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-wildlife-ivory via-wildlife-beige to-wildlife-tan flex flex-col items-center justify-center p-8 font-wildlife">
       {/* Wildlife pattern background */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 left-20 text-9xl">🐻</div>
+        <div className="absolute top-20 left-20 w-24 h-24">
+          <div className="relative w-full h-full">
+            <Image
+              src="/download (2).jpg"
+              alt="Wildlife SOS Logo"
+              fill
+              className="object-contain rounded-full"
+            />
+          </div>
+        </div>
         <div className="absolute top-32 right-32 text-6xl">🌿</div>
         <div className="absolute bottom-32 left-32 text-7xl">🦌</div>
         <div className="absolute bottom-20 right-20 text-8xl">🌳</div>
@@ -21,8 +31,15 @@ export default function Home() {
         {/* Logo placeholder with bear silhouette */}
         <div className="flex justify-center mb-12">
           <div className="relative">
-            <div className="w-32 h-32 bg-wildlife-black rounded-full flex items-center justify-center shadow-wildlife">
-              <div className="text-white text-6xl">🐻</div>
+            <div className="w-32 h-32 bg-wildlife-black rounded-full flex items-center justify-center shadow-wildlife overflow-hidden">
+              <div className="w-full h-full relative">
+                <Image
+                  src="/download (2).jpg"
+                  alt="Wildlife SOS Logo"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             </div>
             <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-wildlife-green rounded-full flex items-center justify-center">
               <span className="text-white text-sm font-bold">360</span>

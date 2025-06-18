@@ -2,6 +2,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, FC } from 'react';
+import Image from 'next/image';
 import AssetTable from './AssetTable';
 import AssetForm from './AssetForm';
 
@@ -29,10 +30,16 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
 
   // Show loading state while checking authentication
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-wildlife-ivory font-wildlife flex items-center justify-center">
+    return (      <div className="min-h-screen bg-wildlife-ivory font-wildlife flex items-center justify-center">
         <div className="text-center">
-          <div className="text-4xl mb-4">🐻</div>
+          <div className="w-16 h-16 mx-auto mb-4 relative">
+            <Image
+              src="/download (2).jpg"
+              alt="Wildlife SOS Logo"
+              fill
+              className="object-contain rounded-full"
+            />
+          </div>
           <div className="text-wildlife-black">Loading...</div>
         </div>
       </div>
@@ -72,10 +79,14 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
       <header className="bg-wildlife-black shadow-wildlife border-b-2 border-wildlife-green">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            {/* Logo and branding */}
-            <div className="flex items-center space-x-4">
-              <div className="w-12 h-12 bg-wildlife-green rounded-full flex items-center justify-center">
-                <span className="text-white text-xl">🐻</span>
+            {/* Logo and branding */}            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-wildlife-green rounded-full flex items-center justify-center relative overflow-hidden">
+                <Image
+                  src="/download (2).jpg"
+                  alt="Wildlife SOS Logo"
+                  fill
+                  className="object-cover"
+                />
               </div>
               <div>
                 <div className="text-white font-bold text-xl">
@@ -113,9 +124,16 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
         {/* Welcome banner */}
         <div className="bg-gradient-to-r from-wildlife-green to-wildlife-green-dark rounded-2xl p-6 mb-8 text-white shadow-wildlife">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">
-                Welcome back, Ranger! 🐻
+            <div>              <h2 className="text-2xl font-bold mb-2 flex items-center space-x-2">
+                <div className="w-8 h-8 relative">
+                  <Image
+                    src="/download (2).jpg"
+                    alt="Wildlife SOS Logo"
+                    fill
+                    className="object-contain rounded-full"
+                  />
+                </div>
+                <span>Welcome back, Ranger!</span>
               </h2>
               <p className="text-wildlife-ivory opacity-90">
                 Track and manage conservation assets across rescue centers
