@@ -2,6 +2,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, FC } from 'react';
+import Image from 'next/image';
 import AssetTable from './AssetTable';
 import AssetForm from './AssetForm';
 
@@ -21,9 +22,8 @@ const InventoryPage: FC<InventoryPageProps> = ({ user }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <header className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <img src="/next.svg" alt="Logo" className="w-10 h-10" />
+      <header className="flex justify-between items-center mb-6">        <div className="flex items-center gap-2">
+          <Image src="/next.svg" alt="Logo" width={40} height={40} />
           <span className="font-bold text-xl">Inventory360</span>
         </div>
         <div className="flex items-center gap-4">
