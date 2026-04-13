@@ -62,7 +62,7 @@ export default function Home() {
             <span className="text-wildlife-green">360</span>
           </h1>
 
-          <p className="text-2xl text-wildlife-brown font-medium">
+          <p className="text-2xl text-wildlife-brown-dark font-medium">
             Conservation Asset Management System
           </p>
 
@@ -76,15 +76,15 @@ export default function Home() {
         <div className="grid grid-cols-3 gap-6 my-8">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-wildlife border border-wildlife-green/20">
             <div className="text-2xl font-bold text-wildlife-green">12+</div>
-            <div className="text-sm text-wildlife-brown">Centers</div>
+            <div className="text-sm text-wildlife-brown-dark">Centers</div>
           </div>
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-wildlife border border-wildlife-green/20">
             <div className="text-2xl font-bold text-wildlife-green">1000+</div>
-            <div className="text-sm text-wildlife-brown">Assets</div>
+            <div className="text-sm text-wildlife-brown-dark">Assets</div>
           </div>
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 shadow-wildlife border border-wildlife-green/20">
             <div className="text-2xl font-bold text-wildlife-green">24/7</div>
-            <div className="text-sm text-wildlife-brown">Tracking</div>
+            <div className="text-sm text-wildlife-brown-dark">Tracking</div>
           </div>
         </div>
 
@@ -103,22 +103,22 @@ export default function Home() {
 
         {/* Features with wildlife theme */}
         <div className="pt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div className="flex items-center justify-center space-x-2 text-wildlife-brown">
+          <div className="flex items-center justify-center space-x-2 text-wildlife-brown-dark">
             <span>🔒</span>
             <span>Secure Google Authentication</span>
           </div>
-          <div className="flex items-center justify-center space-x-2 text-wildlife-brown">
+          <div className="flex items-center justify-center space-x-2 text-wildlife-brown-dark">
             <span>⚡</span>
             <span>Real-time Asset Updates</span>
           </div>
-          <div className="flex items-center justify-center space-x-2 text-wildlife-brown">
+          <div className="flex items-center justify-center space-x-2 text-wildlife-brown-dark">
             <span>🌍</span>
             <span>Multi-location Support</span>
           </div>
         </div>
 
         {/* Wildlife conservation message */}
-        <div className="pt-6 text-xs text-wildlife-brown/70 italic">
+        <div className="pt-6 text-xs text-wildlife-brown-dark/70 italic">
           &ldquo;Every asset tracked helps us save more wildlife&rdquo; - Wildlife SOS Team
         </div>
       </div>

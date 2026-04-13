@@ -25,7 +25,7 @@ export default function LoginPage() {
   }
   
   if (session) {
-    router.push('/inventory');
+    router.push('/select-profile');
     return null;
   }
 
@@ -70,7 +70,7 @@ export default function LoginPage() {
               Welcome to Inventory<span className="text-wildlife-green">360</span>
             </h1>
             
-            <p className="text-wildlife-brown">
+            <p className="text-wildlife-brown-dark">
               Conservation Asset Management Portal
             </p>
           </div>
@@ -82,14 +82,14 @@ export default function LoginPage() {
             <h2 className="text-xl font-semibold text-wildlife-black mb-2">
               Ranger Access Portal
             </h2>
-            <p className="text-sm text-wildlife-brown">
+            <p className="text-sm text-wildlife-brown-dark">
               Sign in to manage conservation assets
             </p>
           </div>
 
           <button
             className="group relative w-full bg-wildlife-green hover:bg-wildlife-green-dark text-white font-semibold py-4 px-6 rounded-2xl shadow-wildlife transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl"
-            onClick={() => signIn('google', { callbackUrl: '/inventory' })}
+            onClick={() => signIn('google', { callbackUrl: '/select-profile' })}
           >
             <div className="flex items-center justify-center space-x-3">
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -104,7 +104,7 @@ export default function LoginPage() {
           </button>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-wildlife-brown/70">
+            <p className="text-xs text-wildlife-brown-dark/70">
               Secure authentication for Wildlife SOS team members
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function LoginPage() {
         {/* Conservation mission statement */}
         <div className="mt-8 text-center">
           <div className="bg-wildlife-green/10 rounded-2xl p-4 border border-wildlife-green/20">
-            <div className="text-2xl mb-2">🌍</div>            <p className="text-sm text-wildlife-brown italic">
+            <div className="text-2xl mb-2">🌍</div>            <p className="text-sm text-wildlife-brown-dark italic">
               &ldquo;Together, we protect and preserve wildlife for future generations&rdquo;
             </p>
           </div>

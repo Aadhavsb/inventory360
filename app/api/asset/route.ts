@@ -4,123 +4,124 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectToDatabase from '@/lib/mongodb';
 import Asset from '@/lib/models/Asset';
-import { assetSchema } from '@/lib/validation';
+import { assetFormSchema, loggedByFieldSchema } from '@/lib/validation';
+import { generateAssetId } from '@/lib/assetId';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     await connectToDatabase();
-    const assets = await Asset.find({}).sort({ createdAt: -1 });
+
+    // Build filter from query params
+    const { searchParams } = new URL(req.url);
+    const department = searchParams.get('department');
+    const category = searchParams.get('category');
+    const site = searchParams.get('site');
+
+    const filter: Record<string, string> = {};
+    if (department) filter.department = department;
+    if (category) filter.category = category;
+    if (site) filter.site = site;
+
+    const assets = await Asset.find(filter).sort({ createdAt: -1 });
     return NextResponse.json({ assets });
   } catch (error) {
     console.error('Error in GET /api/asset:', error);
-    
-    // Check if it's a MongoDB connection issue
+
     if (error instanceof Error && (
       error.message.includes('MongoServerSelectionError') ||
       error.message.includes('ENOTFOUND') ||
       error.message.includes('ssl3_read_bytes') ||
       error.message.includes('tlsv1 alert')
     )) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Database is currently unavailable. Please try again later.',
         type: 'database_unavailable'
       }, { status: 503 });
     }
-    
+
     return NextResponse.json({ error: 'Failed to fetch assets' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  console.log('POST /api/asset - Starting request processing');
-  
   try {
-    // Get the user session
-    console.log('Step 1: Getting user session...');
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Unauthorized - Please log in to add assets',
         type: 'unauthorized'
       }, { status: 401 });
     }
-    
-    console.log('User session found:', session.user.email);
-    
-    console.log('Step 2: Parsing request body...');
+
     const data = await req.json();
-    console.log('Received data:', JSON.stringify(data, null, 2));
-    
-    // Add the logged by information to the data
-    const assetDataWithUser = {
-      ...data,
-      loggedBy: {
-        name: session.user.name || session.user.email?.split('@')[0] || 'Unknown User',
-        email: session.user.email || 'unknown@email.com'
-      }
-    };
-    
-    console.log('Step 3: Validating data with schema...');
-    const parse = assetSchema.safeParse(assetDataWithUser);
+
+    // Validate form data with discriminated union
+    const parse = assetFormSchema.safeParse(data);
     if (!parse.success) {
       console.log('Validation failed:', JSON.stringify(parse.error.errors, null, 2));
-      return NextResponse.json({ 
-        error: 'Invalid asset data', 
-        details: parse.error.errors 
+      return NextResponse.json({
+        error: 'Invalid asset data',
+        details: parse.error.errors
       }, { status: 400 });
     }
-    console.log('Validation passed, validated data:', JSON.stringify(parse.data, null, 2));
-    
-    console.log('Step 4: Connecting to database...');
+
+    // Validate loggedBy separately (discriminatedUnion doesn't support .extend)
+    const loggedBy = {
+      name: session.user.name || session.user.email?.split('@')[0] || 'Unknown User',
+      email: session.user.email || 'unknown@email.com',
+    };
+    const loggedByParse = loggedByFieldSchema.safeParse(loggedBy);
+    if (!loggedByParse.success) {
+      return NextResponse.json({
+        error: 'Invalid user session data',
+        details: loggedByParse.error.errors,
+      }, { status: 400 });
+    }
+
     await connectToDatabase();
-    console.log('Database connected successfully');
-    
-    console.log('Step 5: Creating asset document...');
-    const asset = new Asset(parse.data);
-    
-    console.log('Step 6: Saving to database...');
+
+    // Generate unique asset ID
+    const assetId = await generateAssetId(parse.data.site, parse.data.department);
+
+    const asset = new Asset({
+      ...parse.data,
+      assetId,
+      loggedBy: loggedByParse.data,
+    });
+
     const savedAsset = await asset.save();
-    console.log('Asset saved successfully with ID:', savedAsset._id);
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       success: true,
       insertedId: savedAsset._id,
-      asset: savedAsset
+      asset: savedAsset,
     });
   } catch (error) {
-    console.error('ERROR in POST /api/asset:');
-    console.error('Error type:', typeof error);
-    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('Full error object:', error);
-    
-    // Check if it's a MongoDB connection issue
+    console.error('ERROR in POST /api/asset:', error);
+
     if (error instanceof Error && (
       error.message.includes('MongoServerSelectionError') ||
       error.message.includes('ENOTFOUND') ||
       error.message.includes('ssl3_read_bytes') ||
       error.message.includes('tlsv1 alert')
     )) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Database is currently unavailable. Please try again later.',
         type: 'database_unavailable'
       }, { status: 503 });
     }
-    
-    // Check for validation errors
+
     if (error instanceof Error && error.name === 'ValidationError') {
-      return NextResponse.json({ 
-        error: 'Validation failed', 
+      return NextResponse.json({
+        error: 'Validation failed',
         details: error.message,
         type: 'validation_error'
       }, { status: 400 });
     }
-    
-    // Return more detailed error information
-    return NextResponse.json({ 
-      error: 'Failed to add asset', 
+
+    return NextResponse.json({
+      error: 'Failed to add asset',
       details: error instanceof Error ? error.message : 'Unknown error',
       type: 'server_error'
     }, { status: 500 });
@@ -128,106 +129,121 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  console.log('PUT /api/asset - Starting request processing');
-  
   try {
-    // Get the user session
-    console.log('Step 1: Getting user session...');
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Unauthorized - Please log in to update assets',
         type: 'unauthorized'
       }, { status: 401 });
     }
-    
-    console.log('User session found:', session.user.email);
-    
-    console.log('Step 2: Parsing request body...');
+
     const data = await req.json();
-    console.log('Received data:', JSON.stringify(data, null, 2));
-    
-    // Extract the asset ID
     const { id, ...updateData } = data;
-    
+
     if (!id) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Asset ID is required for updates',
         type: 'validation_error'
       }, { status: 400 });
     }
-    
-    // Add the logged by information to the update data (preserving who last updated)
-    const assetDataWithUser = {
-      ...updateData,
-      loggedBy: {
-        name: session.user.name || session.user.email?.split('@')[0] || 'Unknown User',
-        email: session.user.email || 'unknown@email.com'
-      },
-      updatedAt: new Date()
-    };
-    
-    console.log('Step 3: Validating data with schema...');
-    const parse = assetSchema.safeParse(assetDataWithUser);
+
+    // Validate form data
+    const parse = assetFormSchema.safeParse(updateData);
     if (!parse.success) {
       console.log('Validation failed:', JSON.stringify(parse.error.errors, null, 2));
-      return NextResponse.json({ 
-        error: 'Invalid asset data', 
-        details: parse.error.errors 
+      return NextResponse.json({
+        error: 'Invalid asset data',
+        details: parse.error.errors
       }, { status: 400 });
     }
-    console.log('Validation passed, validated data:', JSON.stringify(parse.data, null, 2));
-    
-    console.log('Step 4: Connecting to database...');
+
+    const loggedBy = {
+      name: session.user.name || session.user.email?.split('@')[0] || 'Unknown User',
+      email: session.user.email || 'unknown@email.com',
+    };
+
     await connectToDatabase();
-    console.log('Database connected successfully');
-    
-    console.log('Step 5: Updating asset document...');
+
     const updatedAsset = await Asset.findByIdAndUpdate(
-      id, 
-      parse.data, 
+      id,
+      { ...parse.data, loggedBy },
       { new: true, runValidators: true }
     );
-    
+
     if (!updatedAsset) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Asset not found',
         type: 'not_found'
       }, { status: 404 });
     }
-    
-    console.log('Asset updated successfully with ID:', updatedAsset._id);
-    
-    return NextResponse.json({ 
+
+    return NextResponse.json({
       success: true,
       updatedId: updatedAsset._id,
-      asset: updatedAsset
+      asset: updatedAsset,
     });
   } catch (error) {
-    console.error('ERROR in PUT /api/asset:');
-    console.error('Error type:', typeof error);
-    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('Full error object:', error);
-    
-    // Check if it's a MongoDB connection issue
+    console.error('ERROR in PUT /api/asset:', error);
+
     if (error instanceof Error && (
       error.message.includes('MongoServerSelectionError') ||
       error.message.includes('ENOTFOUND') ||
       error.message.includes('ssl3_read_bytes') ||
       error.message.includes('tlsv1 alert')
     )) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         error: 'Database is currently unavailable. Please try again later.',
         type: 'database_unavailable'
       }, { status: 503 });
     }
-    
-    // Return more detailed error information
-    return NextResponse.json({ 
-      error: 'Failed to update asset', 
+
+    return NextResponse.json({
+      error: 'Failed to update asset',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      type: 'server_error'
+    }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      return NextResponse.json({
+        error: 'Unauthorized',
+        type: 'unauthorized'
+      }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({
+        error: 'Asset ID is required',
+        type: 'validation_error'
+      }, { status: 400 });
+    }
+
+    await connectToDatabase();
+
+    const deleted = await Asset.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return NextResponse.json({
+        error: 'Asset not found',
+        type: 'not_found'
+      }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('ERROR in DELETE /api/asset:', error);
+    return NextResponse.json({
+      error: 'Failed to delete asset',
       details: error instanceof Error ? error.message : 'Unknown error',
       type: 'server_error'
     }, { status: 500 });

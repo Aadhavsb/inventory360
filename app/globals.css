@@ -1,10 +1,11 @@
+@import "@fontsource/poppins/400.css";
+@import "@fontsource/poppins/500.css";
+@import "@fontsource/poppins/700.css";
+
 /* Tailwind CSS imports */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import "@fontsource/poppins/400.css";
-@import "@fontsource/poppins/500.css";
-@import "@fontsource/poppins/700.css";
 
 :root {
   --background: #F8F8F5;
@@ -34,6 +35,7 @@ body {
   outline: none;
   transition: all 0.2s;
   background: #F8F8F5;
+  color: #1a1a1a;
   font-family: 'Poppins', sans-serif;
 }
 .input:focus {
