@@ -9,6 +9,14 @@ import { generateAssetId } from '@/lib/assetId';
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({
+        error: 'Unauthorized - Please log in to view assets',
+        type: 'unauthorized'
+      }, { status: 401 });
+    }
+
     await connectToDatabase();
 
     // Build filter from query params
@@ -55,11 +63,11 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await req.json();
+    const { repairHistory, ...formData } = data;
 
     // Validate form data with discriminated union
-    const parse = assetFormSchema.safeParse(data);
+    const parse = assetFormSchema.safeParse(formData);
     if (!parse.success) {
-      console.log('Validation failed:', JSON.stringify(parse.error.errors, null, 2));
       return NextResponse.json({
         error: 'Invalid asset data',
         details: parse.error.errors
@@ -84,11 +92,16 @@ export async function POST(req: NextRequest) {
     // Generate unique asset ID
     const assetId = await generateAssetId(parse.data.site, parse.data.department);
 
-    const asset = new Asset({
+    const assetData: Record<string, unknown> = {
       ...parse.data,
       assetId,
       loggedBy: loggedByParse.data,
-    });
+    };
+    if (parse.data.category === 'vehicle' && Array.isArray(repairHistory)) {
+      assetData.repairHistory = repairHistory;
+    }
+
+    const asset = new Asset(assetData);
 
     const savedAsset = await asset.save();
 
@@ -112,6 +125,13 @@ export async function POST(req: NextRequest) {
       }, { status: 503 });
     }
 
+    if (error instanceof Error && 'code' in error && (error as { code: number }).code === 11000) {
+      return NextResponse.json({
+        error: 'An asset with this ID already exists. Please try again.',
+        type: 'duplicate_key'
+      }, { status: 409 });
+    }
+
     if (error instanceof Error && error.name === 'ValidationError') {
       return NextResponse.json({
         error: 'Validation failed',
@@ -122,7 +142,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       error: 'Failed to add asset',
-      details: error instanceof Error ? error.message : 'Unknown error',
       type: 'server_error'
     }, { status: 500 });
   }
@@ -140,7 +159,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const data = await req.json();
-    const { id, ...updateData } = data;
+    const { id, repairHistory, ...updateData } = data;
 
     if (!id) {
       return NextResponse.json({
@@ -152,7 +171,6 @@ export async function PUT(req: NextRequest) {
     // Validate form data
     const parse = assetFormSchema.safeParse(updateData);
     if (!parse.success) {
-      console.log('Validation failed:', JSON.stringify(parse.error.errors, null, 2));
       return NextResponse.json({
         error: 'Invalid asset data',
         details: parse.error.errors
@@ -166,9 +184,15 @@ export async function PUT(req: NextRequest) {
 
     await connectToDatabase();
 
+    // Include repairHistory for vehicles if provided
+    const updatePayload: Record<string, unknown> = { ...parse.data, loggedBy };
+    if (parse.data.category === 'vehicle' && Array.isArray(repairHistory)) {
+      updatePayload.repairHistory = repairHistory;
+    }
+
     const updatedAsset = await Asset.findByIdAndUpdate(
       id,
-      { ...parse.data, loggedBy },
+      updatePayload,
       { new: true, runValidators: true }
     );
 
@@ -201,7 +225,6 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({
       error: 'Failed to update asset',
-      details: error instanceof Error ? error.message : 'Unknown error',
       type: 'server_error'
     }, { status: 500 });
   }
@@ -244,7 +267,6 @@ export async function DELETE(req: NextRequest) {
     console.error('ERROR in DELETE /api/asset:', error);
     return NextResponse.json({
       error: 'Failed to delete asset',
-      details: error instanceof Error ? error.message : 'Unknown error',
       type: 'server_error'
     }, { status: 500 });
   }

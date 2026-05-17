@@ -1,5 +1,5 @@
 import { CENTRE_CODES, DEPARTMENT_CODES } from '@/lib/constants';
-import Asset from '@/lib/models/Asset';
+import AssetCounter from '@/lib/models/AssetCounter';
 
 export async function generateAssetId(centre: string, department: string): Promise<string> {
   const centreCode = CENTRE_CODES[centre];
@@ -17,10 +17,13 @@ export async function generateAssetId(centre: string, department: string): Promi
 
   const prefix = `${centreCode}-${deptCode}-${dateStr}`;
 
-  const count = await Asset.countDocuments({
-    assetId: { $regex: `^${prefix}` },
-  });
+  // Atomic increment — safe under concurrent requests
+  const counter = await AssetCounter.findOneAndUpdate(
+    { prefix },
+    { $inc: { seq: 1 } },
+    { upsert: true, new: true },
+  );
 
-  const seq = String(count + 1).padStart(3, '0');
+  const seq = String(counter.seq).padStart(3, '0');
   return `${prefix}-${seq}`;
 }

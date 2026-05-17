@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CENTRES, DEPARTMENTS, MEDICINE_TYPES } from '@/lib/constants';
+import { CENTRES, DEPARTMENTS, MEDICINE_TYPES, FURNITURE_TYPES, MACHINERY_TYPES } from '@/lib/constants';
 
 // --- User Profile schema ---
 export const userProfileSchema = z.object({
@@ -67,6 +67,13 @@ const medicalEquipmentFormSchema = z.object({
   insuranceInfo: z.string().optional(),
 });
 
+// Repair history entry (for vehicles)
+const repairEntrySchema = z.object({
+  date: z.string().min(1, 'Repair date is required'),
+  description: z.string().min(1, 'Description is required'),
+  cost: z.coerce.number().min(0, 'Cost must be 0 or more'),
+});
+
 // Vehicle
 const vehicleFormSchema = z.object({
   ...baseAssetFields,
@@ -74,6 +81,7 @@ const vehicleFormSchema = z.object({
   manufacturer: z.string().optional(),
   insuranceDueDate: z.string().optional(),
   serviceDueDate: z.string().optional(),
+  repairHistory: z.array(repairEntrySchema).optional(),
 });
 
 // AV Equipment
@@ -88,6 +96,9 @@ const avEquipmentFormSchema = z.object({
 const furnitureFormSchema = z.object({
   ...baseAssetFields,
   category: z.literal('furniture'),
+  itemType: z.enum(FURNITURE_TYPES as unknown as [string, ...string[]], {
+    errorMap: () => ({ message: 'Please select a furniture type' })
+  }),
   manufacturer: z.string().optional(),
   serialNumber: z.string().optional(),
 });
@@ -96,6 +107,9 @@ const furnitureFormSchema = z.object({
 const machineryFormSchema = z.object({
   ...baseAssetFields,
   category: z.literal('machinery'),
+  itemType: z.enum(MACHINERY_TYPES as unknown as [string, ...string[]], {
+    errorMap: () => ({ message: 'Please select a machinery type' })
+  }),
   manufacturer: z.string().optional(),
   serialNumber: z.string().optional(),
 });

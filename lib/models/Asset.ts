@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { DEPARTMENTS, CATEGORIES, MEDICINE_TYPES, CENTRES } from '@/lib/constants';
+import { DEPARTMENTS, CATEGORIES, MEDICINE_TYPES, CENTRES, FURNITURE_TYPES, MACHINERY_TYPES } from '@/lib/constants';
 
 const repairEntrySchema = new mongoose.Schema({
   date: { type: Date, required: true },
@@ -25,16 +25,19 @@ const assetSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: [...DEPARTMENTS],
+    index: true,
   },
   category: {
     type: String,
     required: true,
     enum: [...CATEGORIES],
+    index: true,
   },
   status: {
     type: String,
     required: true,
     enum: ['active', 'phased out'],
+    index: true,
   },
   acquired: {
     type: String,
@@ -50,6 +53,7 @@ const assetSchema = new mongoose.Schema({
     required: true,
     enum: [...CENTRES],
     trim: true,
+    index: true,
   },
   quantity: {
     type: Number,
@@ -64,6 +68,9 @@ const assetSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true },
   },
+
+  // Asset image (base64 data URI)
+  image: { type: String },
 
   // --- Veterinary > Medicine ---
   compound: { type: String, trim: true },
@@ -82,6 +89,12 @@ const assetSchema = new mongoose.Schema({
   warrantyPeriod: { type: String, trim: true },
   serviceInfo: { type: String, trim: true },
   insuranceInfo: { type: String, trim: true },
+
+  // --- Furniture & Machinery item type ---
+  itemType: {
+    type: String,
+    enum: [...FURNITURE_TYPES, ...MACHINERY_TYPES],
+  },
 
   // --- Vehicles ---
   insuranceDueDate: { type: Date },

@@ -12,4 +12,15 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    async signIn({ user }) {
+      const allowedEmails = process.env.ALLOWED_EMAILS?.split(',').map(e => e.trim()) ?? [];
+      const email = user.email ?? '';
+      return email.endsWith('@wildlifesos.org') || allowedEmails.includes(email);
+    },
+  },
+  pages: {
+    signIn: '/login',
+    error: '/login',
+  },
 };

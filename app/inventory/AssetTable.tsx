@@ -35,6 +35,7 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger, onEditAsset }) => {
   const [search, setSearch] = useState('');
   const [filtered, setFiltered] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [locationFilter, setLocationFilter] = useState('all');
@@ -116,12 +117,18 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger, onEditAsset }) => {
   useEffect(() => {
     async function fetchAssets() {
       setLoading(true);
+      setFetchError('');
       try {
         const res = await fetch('/api/asset');
+        if (!res.ok) {
+          setFetchError('Failed to load assets. Please try again.');
+          setLoading(false);
+          return;
+        }
         const data = await res.json();
         setAssets(data.assets || []);
-      } catch (error) {
-        console.error('Failed to fetch assets:', error);
+      } catch {
+        setFetchError('Network error — could not reach the server. Please check your connection.');
       }
       setLoading(false);
     }
@@ -188,6 +195,30 @@ const AssetTable: FC<AssetTableProps> = ({ refreshTrigger, onEditAsset }) => {
         <div className="text-6xl mb-4">🐻</div>
         <div className="text-wildlife-green-text font-semibold text-lg">Loading conservation assets...</div>
         <div className="text-wildlife-brown-dark text-sm mt-2">Fetching inventory from rescue centres</div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="text-center py-12 font-wildlife">
+        <div className="text-6xl mb-4">⚠️</div>
+        <div className="text-red-600 font-semibold text-lg mb-2">Could not load assets</div>
+        <div className="text-wildlife-brown-dark text-sm mb-6">{fetchError}</div>
+        <button
+          onClick={() => {
+            setFetchError('');
+            setLoading(true);
+            fetch('/api/asset')
+              .then(r => r.json())
+              .then(d => setAssets(d.assets || []))
+              .catch(() => setFetchError('Network error — could not reach the server.'))
+              .finally(() => setLoading(false));
+          }}
+          className="btn-wildlife px-6 py-2"
+        >
+          Retry
+        </button>
       </div>
     );
   }

@@ -9,14 +9,15 @@ module.exports = {
     extend: {
       colors: {
         wildlife: {
-          black: '#000000',
+          black: '#1a1a1a',
           green: '#6A8F3F',
           'green-dark': '#5A7A35',
           'green-light': '#7A9F55',
-          'green-text': '#3D6B1E',
+          'green-text': '#2D5016',
           ivory: '#F8F8F5',
           brown: '#8B4513',
-          'brown-dark': '#5C2D0E',
+          'brown-dark': '#3D1F08',
+          'brown-text': '#4A2A0A',
           beige: '#F5F5DC',
           tan: '#D2B48C',
         }

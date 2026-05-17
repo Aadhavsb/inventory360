@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { assetFormSchema, type AssetFormData } from '@/lib/validation';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   CENTRES,
@@ -11,6 +11,10 @@ import {
   DEPARTMENT_CATEGORIES,
   CATEGORY_LABELS,
   MEDICINE_TYPES,
+  FURNITURE_TYPES,
+  FURNITURE_TYPE_LABELS,
+  MACHINERY_TYPES,
+  MACHINERY_TYPE_LABELS,
 } from '@/lib/constants';
 
 interface AssetFormProps {
@@ -41,6 +45,7 @@ export default function AssetForm({ onSuccess, editAsset, onCancel, userProfile 
       'compound', 'companyName', 'dateOfManufacture', 'dateOfExpiry', 'medicineType',
       'manufacturer', 'countryOfOrigin', 'serialNumber', 'warrantyPeriod',
       'serviceInfo', 'insuranceInfo', 'insuranceDueDate', 'serviceDueDate',
+      'itemType',
     ];
     for (const field of optionalFields) {
       if (asset[field]) base[field] = asset[field] as string;
@@ -61,6 +66,42 @@ export default function AssetForm({ onSuccess, editAsset, onCancel, userProfile 
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    return () => { timerRefs.current.forEach(clearTimeout); };
+  }, []);
+
+  // Image state (managed outside react-hook-form)
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    (editAsset?.image as string) || null
+  );
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image must be under 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Repair history state (managed outside react-hook-form due to discriminated union limitations)
+  interface RepairEntry { date: string; description: string; cost: number | string; }
+  const [repairHistory, setRepairHistory] = useState<RepairEntry[]>(
+    editAsset?.repairHistory
+      ? (editAsset.repairHistory as RepairEntry[]).map(e => ({
+          date: e.date ? new Date(e.date as string).toISOString().split('T')[0] : '',
+          description: e.description || '',
+          cost: e.cost ?? '',
+        }))
+      : []
+  );
 
   const watchDepartment = watch('department') || defaultDepartment;
   const watchCategory = watch('category') || defaultCategory;
@@ -75,7 +116,16 @@ export default function AssetForm({ onSuccess, editAsset, onCancel, userProfile 
       const isUpdate = !!editAsset;
       const url = '/api/asset';
       const method = isUpdate ? 'PUT' : 'POST';
-      const payload = isUpdate ? { ...data, id: (editAsset as Record<string, unknown>)._id } : data;
+      // Attach extra fields not managed by react-hook-form
+      const extraFields: Record<string, unknown> = {};
+      if (data.category === 'vehicle' && repairHistory.length > 0) {
+        extraFields.repairHistory = repairHistory;
+      }
+      if (imagePreview) {
+        extraFields.image = imagePreview;
+      }
+      const formData = { ...data, ...extraFields };
+      const payload = isUpdate ? { ...formData, id: (editAsset as Record<string, unknown>)._id } : formData;
 
       const res = await fetch(url, {
         method,
@@ -96,13 +146,8 @@ export default function AssetForm({ onSuccess, editAsset, onCancel, userProfile 
           reset();
         }
 
-        setTimeout(() => {
-          onSuccess?.(responseData);
-        }, 500);
-
-        setTimeout(() => {
-          setSuccess('');
-        }, 4000);
+        timerRefs.current.push(setTimeout(() => { onSuccess?.(responseData); }, 500));
+        timerRefs.current.push(setTimeout(() => { setSuccess(''); }, 4000));
       } else {
         let errorMessage = 'Failed to save asset';
 
@@ -139,7 +184,7 @@ export default function AssetForm({ onSuccess, editAsset, onCancel, userProfile 
             <span className="text-lg">✓</span>
             <div>{success}</div>
           </div>
-          <button onClick={() => setSuccess('')} className="text-wildlife-green/60 hover:text-wildlife-green text-xs">✕</button>
+          <button onClick={() => setSuccess('')} aria-label="Dismiss" className="text-wildlife-green/60 hover:text-wildlife-green text-xs">✕</button>
         </div>
       )}
       {error && (
@@ -332,13 +377,135 @@ export default function AssetForm({ onSuccess, editAsset, onCancel, userProfile 
                 <input type="date" {...register('serviceDueDate')} className="input" />
               </div>
             </div>
+
+            {/* Repair History */}
+            <div className="mt-4 pt-4 border-t border-wildlife-green/20">
+              <div className="flex items-center justify-between mb-3">
+                <h6 className="text-sm font-semibold text-wildlife-black">Repair History</h6>
+                <button
+                  type="button"
+                  onClick={() => setRepairHistory([...repairHistory, { date: '', description: '', cost: '' }])}
+                  className="text-xs px-3 py-1 bg-wildlife-green/10 text-wildlife-green-text rounded-lg hover:bg-wildlife-green/20 transition-colors"
+                >
+                  + Add Repair Entry
+                </button>
+              </div>
+              {repairHistory.length === 0 && (
+                <p className="text-sm text-wildlife-brown-dark italic">No repair entries yet.</p>
+              )}
+              {repairHistory.map((entry, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr_auto] gap-3 mb-3 items-end">
+                  <div>
+                    <label className="block text-xs font-medium text-wildlife-black mb-1">Date *</label>
+                    <input
+                      type="date"
+                      className="input"
+                      value={entry.date}
+                      onChange={(e) => {
+                        const updated = [...repairHistory];
+                        updated[index] = { ...updated[index], date: e.target.value };
+                        setRepairHistory(updated);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-wildlife-black mb-1">Description *</label>
+                    <input
+                      className="input"
+                      placeholder="e.g., Engine oil change"
+                      value={entry.description}
+                      onChange={(e) => {
+                        const updated = [...repairHistory];
+                        updated[index] = { ...updated[index], description: e.target.value };
+                        setRepairHistory(updated);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-wildlife-black mb-1">Cost (₹) *</label>
+                    <input
+                      type="number"
+                      className="input"
+                      min={0}
+                      placeholder="0"
+                      value={entry.cost}
+                      onChange={(e) => {
+                        const updated = [...repairHistory];
+                        updated[index] = { ...updated[index], cost: e.target.value };
+                        setRepairHistory(updated);
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setRepairHistory(repairHistory.filter((_, i) => i !== index))}
+                    className="text-red-500 hover:text-red-700 text-sm px-2 py-2"
+                    aria-label="Remove repair entry"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {(watchCategory === 'av-equipment' || watchCategory === 'furniture' || watchCategory === 'machinery') && (
+        {watchCategory === 'av-equipment' && (
           <div className="border border-wildlife-green/20 rounded-xl p-4 bg-wildlife-green/5">
-            <h5 className="text-sm font-semibold text-wildlife-black mb-4">{CATEGORY_LABELS[watchCategory]} Details</h5>
+            <h5 className="text-sm font-semibold text-wildlife-black mb-4">AV Equipment Details</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-wildlife-black mb-1">Manufacturer</label>
+                <input {...register('manufacturer')} className="input" placeholder="Manufacturer name" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-wildlife-black mb-1">Serial Number</label>
+                <input {...register('serialNumber')} className="input" placeholder="Serial number" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {watchCategory === 'furniture' && (
+          <div className="border border-wildlife-green/20 rounded-xl p-4 bg-wildlife-green/5">
+            <h5 className="text-sm font-semibold text-wildlife-black mb-4">Furniture Details</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-wildlife-black mb-1">Furniture Type *</label>
+                <select {...register('itemType')} className="input">
+                  <option value="">Select type...</option>
+                  {FURNITURE_TYPES.map(t => (
+                    <option key={t} value={t}>{FURNITURE_TYPE_LABELS[t]}</option>
+                  ))}
+                </select>
+                {'itemType' in errors && <span className="text-red-500 text-sm mt-1 block">{(errors as Record<string, { message?: string }>).itemType?.message}</span>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-wildlife-black mb-1">Manufacturer</label>
+                <input {...register('manufacturer')} className="input" placeholder="Manufacturer name" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-wildlife-black mb-1">Serial Number</label>
+                <input {...register('serialNumber')} className="input" placeholder="Serial number" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {watchCategory === 'machinery' && (
+          <div className="border border-wildlife-green/20 rounded-xl p-4 bg-wildlife-green/5">
+            <h5 className="text-sm font-semibold text-wildlife-black mb-4">Machinery Details</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-wildlife-black mb-1">Machinery Type *</label>
+                <select {...register('itemType')} className="input">
+                  <option value="">Select type...</option>
+                  {MACHINERY_TYPES.map(t => (
+                    <option key={t} value={t}>{MACHINERY_TYPE_LABELS[t]}</option>
+                  ))}
+                </select>
+                {'itemType' in errors && <span className="text-red-500 text-sm mt-1 block">{(errors as Record<string, { message?: string }>).itemType?.message}</span>}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-wildlife-black mb-1">Manufacturer</label>
                 <input {...register('manufacturer')} className="input" placeholder="Manufacturer name" />
@@ -360,6 +527,35 @@ export default function AssetForm({ onSuccess, editAsset, onCancel, userProfile 
             placeholder="Additional details about the asset..."
             rows={3}
           />
+        </div>
+
+        {/* Asset Image */}
+        <div>
+          <label className="block text-sm font-semibold text-wildlife-black mb-2">Asset Photo</label>
+          <div className="flex items-start space-x-4">
+            <div className="flex-1">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="input text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-wildlife-green/10 file:text-wildlife-green-text hover:file:bg-wildlife-green/20"
+              />
+              <p className="text-xs text-wildlife-brown-dark mt-1">Max 2MB. JPG, PNG accepted.</p>
+            </div>
+            {imagePreview && (
+              <div className="relative w-20 h-20 rounded-lg overflow-hidden border border-wildlife-tan">
+                <img src={imagePreview} alt="Asset preview" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setImagePreview(null)}
+                  aria-label="Remove image"
+                  className="absolute top-0 right-0 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-bl-lg"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Submit Buttons */}

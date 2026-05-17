@@ -104,7 +104,7 @@ export default function LoginPage() {
           </button>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-wildlife-brown-dark/70">
+            <p className="text-xs text-wildlife-brown-dark">
               Secure authentication for Wildlife SOS team members
             </p>
           </div>

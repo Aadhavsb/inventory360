@@ -92,7 +92,51 @@ export const MEDICINE_TYPES = [
   'powder',
 ] as const;
 
+export const FURNITURE_TYPES = [
+  'office-chair',
+  'table',
+  'stand',
+  'cabinet',
+  'shelf',
+  'bench',
+  'sofa',
+  'other',
+] as const;
+
+export const FURNITURE_TYPE_LABELS: Record<string, string> = {
+  'office-chair': 'Office Chair',
+  'table': 'Table',
+  'stand': 'Stand',
+  'cabinet': 'Cabinet',
+  'shelf': 'Shelf',
+  'bench': 'Bench',
+  'sofa': 'Sofa',
+  'other': 'Other',
+};
+
+export const MACHINERY_TYPES = [
+  'garden-equipment',
+  'drill-machine',
+  'generator',
+  'pump',
+  'compressor',
+  'welding-machine',
+  'other',
+] as const;
+
+export const MACHINERY_TYPE_LABELS: Record<string, string> = {
+  'garden-equipment': 'Garden Equipment',
+  'drill-machine': 'Drill Machine',
+  'generator': 'Generator',
+  'pump': 'Pump',
+  'compressor': 'Compressor',
+  'welding-machine': 'Welding Machine',
+  'other': 'Other',
+};
+
 export type Centre = typeof CENTRES[number];
 export type Department = typeof DEPARTMENTS[number];
 export type Category = typeof CATEGORIES[number];
 export type MedicineType = typeof MEDICINE_TYPES[number];
+export type FurnitureType = typeof FURNITURE_TYPES[number];
+export type MachineryType = typeof MACHINERY_TYPES[number];
